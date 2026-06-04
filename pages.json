@@ -45,11 +45,7 @@
 		{
 			"path": "pages/share/index",
 			"style": {
-				"navigationStyle": "custom",
-				"mp-weixin": {
-					"enableShareAppMessage": true,
-					"enableShareTimeline": true
-				}
+				"navigationStyle": "custom"
 			}
 		}
 	],

@@ -23,8 +23,15 @@ export function getCreateProfileErrorMessage(
 	}
 	if (
 		lower.includes('timeout') ||
-		lower.includes('network') ||
+		lower.includes('time_limit') ||
+		lower.includes('504003') ||
 		msg.includes('请求超时') ||
+		msg.includes('timed out')
+	) {
+		return '生成时间较长，请稍后重试；若反复失败，请改用手动选择城市。'
+	}
+	if (
+		lower.includes('network') ||
 		msg.includes('fail')
 	) {
 		return '网络不太稳定，请稍后重试。'

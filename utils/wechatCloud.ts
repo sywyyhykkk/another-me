@@ -39,7 +39,7 @@ export function initWechatCloud(): boolean {
 	const wxGlobal = getWx()
 	wxGlobal!.cloud!.init({
 		env: WECHAT_CLOUD_ENV_ID,
-		traceUser: true
+		traceUser: false
 	})
 
 	hasCloudInited = true

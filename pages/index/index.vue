@@ -57,6 +57,13 @@ const isLocating = ref(false)
 const isCheckingProfile = ref(true)
 
 onLoad(async () => {
+	// #ifdef MP-WEIXIN
+	uni.showShareMenu({
+		withShareTicket: true,
+		menus: ['shareAppMessage', 'shareTimeline']
+	})
+	// #endif
+
 	try {
 		const res = await getActiveVirtualProfile()
 		if (res.success && res.exists && res.data) {
@@ -132,6 +139,20 @@ function handleStart() {
 function handleManualSelect() {
 	uni.setStorageSync(STORAGE_KEYS.locationMode, 'manual')
 	goLocationSelect()
+}
+</script>
+
+<script lang="ts">
+import { HOME_SHARE_PAYLOAD } from '../../utils/sharePagePayload'
+
+/** 微信小程序要求页面在 Options 中声明分享生命周期 */
+export default {
+	onShareAppMessage() {
+		return { ...HOME_SHARE_PAYLOAD }
+	},
+	onShareTimeline() {
+		return { title: HOME_SHARE_PAYLOAD.title }
+	}
 }
 </script>
 
