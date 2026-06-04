@@ -1,8 +1,9 @@
 const cloud = require('wx-server-sdk')
+const { ENV_ID } = require('./env.config')
 const https = require('https')
 
 cloud.init({
-  env: cloud.DYNAMIC_CURRENT_ENV
+  env: ENV_ID
 })
 
 const db = cloud.database()

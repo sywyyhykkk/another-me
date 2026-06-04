@@ -16,7 +16,10 @@
 					aria-label="刷新"
 					@click="handleRefresh"
 				>
-					<view class="btn-refresh__glyph" :class="{ 'btn-refresh__glyph--spin': isRefreshing }" />
+					<view class="btn-refresh__icon" :class="{ 'btn-refresh__icon--spin': isRefreshing }">
+						<view class="btn-refresh__arc btn-refresh__arc--tl" />
+						<view class="btn-refresh__arc btn-refresh__arc--br" />
+					</view>
 				</button>
 			</view>
 			<view class="meta-row">
@@ -463,9 +466,9 @@ async function handleReset() {
 	height: 64rpx;
 	padding: 0;
 	margin: 0;
-	border: 2rpx solid $am-border !important;
+	border: none !important;
 	border-radius: 50%;
-	background: $am-bg !important;
+	background: rgba(143, 185, 150, 0.12) !important;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -479,36 +482,65 @@ async function handleReset() {
 	opacity: 0.5;
 }
 
-.btn-refresh__glyph {
-	width: 28rpx;
-	height: 28rpx;
-	border: 4rpx solid $am-text-muted;
-	border-right-color: transparent;
-	border-radius: 50%;
-	box-sizing: border-box;
-	transform: rotate(-45deg);
+.btn-refresh__icon {
+	width: 30rpx;
+	height: 30rpx;
 	position: relative;
 }
 
-.btn-refresh__glyph::before {
-	content: '';
+.btn-refresh__arc {
 	position: absolute;
-	right: -4rpx;
-	top: -10rpx;
-	border: 8rpx solid transparent;
-	border-left: 12rpx solid $am-text-muted;
+	width: 14rpx;
+	height: 14rpx;
+	box-sizing: border-box;
 }
 
-.btn-refresh__glyph--spin {
-	animation: refresh-spin 0.8s linear infinite;
+.btn-refresh__arc--tl {
+	top: 0;
+	left: 0;
+	border-top: 3rpx solid $am-secondary;
+	border-right: 3rpx solid transparent;
+	border-radius: 0 100% 0 0;
+}
+
+.btn-refresh__arc--tl::after {
+	content: '';
+	position: absolute;
+	top: -2rpx;
+	right: -8rpx;
+	border: 4rpx solid transparent;
+	border-left: 7rpx solid $am-secondary;
+	transform: rotate(-18deg);
+}
+
+.btn-refresh__arc--br {
+	right: 0;
+	bottom: 0;
+	border-bottom: 3rpx solid $am-secondary;
+	border-left: 3rpx solid transparent;
+	border-radius: 0 0 0 100%;
+}
+
+.btn-refresh__arc--br::after {
+	content: '';
+	position: absolute;
+	bottom: -2rpx;
+	left: -8rpx;
+	border: 4rpx solid transparent;
+	border-right: 7rpx solid $am-secondary;
+	transform: rotate(-18deg);
+}
+
+.btn-refresh__icon--spin {
+	animation: refresh-spin 0.85s linear infinite;
 }
 
 @keyframes refresh-spin {
 	from {
-		transform: rotate(-45deg);
+		transform: rotate(0deg);
 	}
 	to {
-		transform: rotate(315deg);
+		transform: rotate(360deg);
 	}
 }
 </style>
