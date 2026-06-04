@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "types": ["@dcloudio/types"]
+  },
+  "include": ["**/*.ts", "**/*.d.ts", "**/*.vue"],
+  "exclude": ["node_modules", "unpackage", "dist", "cloudfunctions"]
+}
