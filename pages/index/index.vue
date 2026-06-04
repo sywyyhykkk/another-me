@@ -5,42 +5,51 @@
 			<text class="main-title">看看地球另一端的你，此刻正在做什么</text>
 		</view>
 
-		<view class="intro card">
-			<text class="intro-text">
-				「对面的我」会根据你的位置，找到地球另一端的对应地点，并生成一个生活在那里的虚拟形象。它会按照当地时间和生活节奏，睡觉、学习、工作、吃饭或游玩。
-			</text>
+		<view v-if="isCheckingProfile" class="checking card">
+			<text class="checking-text">正在确认你的另一个我...</text>
 		</view>
 
-		<view class="earth-wrap">
-			<view class="earth">
-				<view class="earth-land earth-land--1" />
-				<view class="earth-land earth-land--2" />
-				<view class="earth-dot" />
+		<template v-else>
+			<view class="intro card">
+				<text class="intro-text">
+					「对面的我」会根据你的位置，找到地球另一端的对应地点，并生成一个生活在那里的虚拟形象。它会按照当地时间和生活节奏，睡觉、学习、工作、吃饭或游玩。
+				</text>
 			</view>
-		</view>
 
-		<view class="actions">
-			<button
-				class="btn btn-primary"
-				:disabled="isLocating"
-				:loading="isLocating"
-				@click="handleStart"
-			>
-				{{ isLocating ? '正在获取位置...' : '开启我的另一个我' }}
-			</button>
-			<button class="btn btn-secondary" :disabled="isLocating" @click="handleManualSelect">
-				手动选择位置
-			</button>
-		</view>
+			<view class="earth-wrap">
+				<view class="earth">
+					<view class="earth-land earth-land--1" />
+					<view class="earth-land earth-land--2" />
+					<view class="earth-dot" />
+				</view>
+			</view>
 
-		<text class="privacy">
-			我们只会使用你的位置来计算地球另一端的位置，不会展示你的精确地址。
-		</text>
+			<view class="actions">
+				<button
+					class="btn btn-primary"
+					:disabled="isLocating"
+					:loading="isLocating"
+					@click="handleStart"
+				>
+					{{ isLocating ? '正在获取位置...' : '开启我的另一个我' }}
+				</button>
+				<button class="btn btn-secondary" :disabled="isLocating" @click="handleManualSelect">
+					手动选择位置
+				</button>
+			</view>
+
+			<text class="privacy">
+				我们只会使用你的位置来计算地球另一端的位置，不会展示你的精确地址。
+			</text>
+		</template>
 	</view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { getActiveVirtualProfile } from '../../api/virtualProfile'
+import { STORAGE_KEYS } from '../../utils/profileStorage'
 
 interface UserLocation {
 	source: 'device'
@@ -50,14 +59,28 @@ interface UserLocation {
 	createdAt: number
 }
 
-const STORAGE_KEY_USER_LOCATION = 'otherMe:userLocation'
-const STORAGE_KEY_LOCATION_MODE = 'otherMe:locationMode'
-
 const isLocating = ref(false)
+const isCheckingProfile = ref(true)
+
+onLoad(async () => {
+	try {
+		const res = await getActiveVirtualProfile()
+		if (res.success && res.exists && res.data) {
+			uni.reLaunch({
+				url: '/pages/result/index'
+			})
+			return
+		}
+	} catch (error) {
+		console.warn('[index] getActiveVirtualProfile failed', error)
+	} finally {
+		isCheckingProfile.value = false
+	}
+})
 
 function saveUserLocation(location: UserLocation) {
-	uni.setStorageSync(STORAGE_KEY_USER_LOCATION, location)
-	uni.setStorageSync(STORAGE_KEY_LOCATION_MODE, 'device')
+	uni.setStorageSync(STORAGE_KEYS.userLocation, location)
+	uni.setStorageSync(STORAGE_KEYS.locationMode, 'device')
 }
 
 function goAvatarSelect() {
@@ -73,7 +96,7 @@ function goLocationSelect() {
 }
 
 function handleStart() {
-	if (isLocating.value) return
+	if (isLocating.value || isCheckingProfile.value) return
 
 	isLocating.value = true
 
@@ -110,7 +133,7 @@ function handleStart() {
 }
 
 function handleManualSelect() {
-	uni.setStorageSync(STORAGE_KEY_LOCATION_MODE, 'manual')
+	uni.setStorageSync(STORAGE_KEYS.locationMode, 'manual')
 	goLocationSelect()
 }
 </script>
@@ -118,7 +141,7 @@ function handleManualSelect() {
 <style lang="scss" scoped>
 .page {
 	min-height: 100vh;
-	padding: calc(48rpx + env(safe-area-inset-top)) 40rpx calc(64rpx + env(safe-area-inset-bottom));
+	padding: 248rpx 40rpx 64rpx;
 	background: $am-bg;
 	box-sizing: border-box;
 	display: flex;
@@ -147,11 +170,26 @@ function handleManualSelect() {
 	padding: 0 16rpx;
 }
 
+.checking {
+	padding: 32rpx;
+	margin-top: 24rpx;
+}
+
+.checking-text {
+	display: block;
+	font-size: 28rpx;
+	color: $am-text-muted;
+	text-align: center;
+}
+
 .card {
 	background: $am-card;
 	border-radius: $am-radius-lg;
 	border: 2rpx solid $am-border;
 	box-shadow: $am-shadow-soft;
+}
+
+.intro {
 	padding: 32rpx;
 	margin-bottom: 40rpx;
 }

@@ -27,6 +27,7 @@
 			<button
 				class="btn"
 				:class="selectedAvatarId ? 'btn-primary' : 'btn-disabled'"
+				:disabled="isSubmitting"
 				@click="goGenerate"
 			>
 				生成我的另一个我
@@ -38,12 +39,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Avatar } from '../../types/index'
-import { MOCK_AVATARS } from '../../utils/mock'
+import { toSelectedAvatar } from '../../utils/cityPresets'
+import { AVATARS } from '../../utils/avatars'
+import { STORAGE_KEYS } from '../../utils/profileStorage'
 import { getSession, setSelectedAvatar } from '../../utils/session'
 
-const avatars = MOCK_AVATARS
+const avatars = AVATARS
 const session = getSession()
 const selectedAvatarId = ref(session.selectedAvatar?.id || '')
+const isSubmitting = ref(false)
 
 function getEmoji(id: string) {
 	const map: Record<string, string> = {
@@ -58,15 +62,31 @@ function getEmoji(id: string) {
 function selectAvatar(avatar: Avatar) {
 	selectedAvatarId.value = avatar.id
 	setSelectedAvatar(avatar)
+	uni.setStorageSync(
+		STORAGE_KEYS.selectedAvatar,
+		toSelectedAvatar({
+			id: avatar.id,
+			name: avatar.name,
+			description: avatar.description,
+			emoji: getEmoji(avatar.id)
+		})
+	)
 }
 
 function goGenerate() {
+	if (isSubmitting.value) return
+
 	if (!selectedAvatarId.value) {
 		uni.showToast({ title: '请先选择一个形象', icon: 'none' })
 		return
 	}
+
+	isSubmitting.value = true
 	uni.navigateTo({
-		url: '/pages/loading/index'
+		url: '/pages/loading/index',
+		complete: () => {
+			isSubmitting.value = false
+		}
 	})
 }
 </script>
@@ -74,7 +94,7 @@ function goGenerate() {
 <style lang="scss" scoped>
 .page {
 	min-height: 100vh;
-	padding: 32rpx 40rpx 180rpx;
+	padding: 248rpx 40rpx 64rpx;
 	background: $am-bg;
 	box-sizing: border-box;
 }

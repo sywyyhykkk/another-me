@@ -9,37 +9,41 @@
 		{
 			"path": "pages/location-select/index",
 			"style": {
-				"navigationBarTitleText": "手动选择位置"
+				"navigationBarTitleText": ""
 			}
 		},
 		{
 			"path": "pages/avatar-select/index",
 			"style": {
-				"navigationBarTitleText": "选择形象"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/loading/index",
 			"style": {
-				"navigationBarTitleText": "正在生成"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/result/index",
 			"style": {
-				"navigationBarTitleText": "另一个我"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/timeline/index",
 			"style": {
-				"navigationBarTitleText": "今天的一天"
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/share/index",
 			"style": {
-				"navigationBarTitleText": "分享卡片"
+				"navigationStyle": "custom",
+				"mp-weixin": {
+					"enableShareAppMessage": true,
+					"enableShareTimeline": true
+				}
 			}
 		}
 	],

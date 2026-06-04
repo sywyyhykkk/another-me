@@ -63,7 +63,8 @@
 		},
 		"requiredPrivateInfos": [
 			"getLocation"
-		]
+		],
+		"cloudfunctionRoot": "cloudfunctions/"
 	},
 	"mp-alipay": {
 		"usingComponents": true

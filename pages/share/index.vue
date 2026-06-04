@@ -1,7 +1,11 @@
 <template>
-	<view class="page">
+	<view v-if="isLoading" class="page page--loading">
+		<text class="loading-text">正在加载...</text>
+	</view>
+	<view v-else-if="activeProfile" class="page">
 		<view class="header">
-			<text class="title">生成分享卡片</text>
+			<text class="title">分享给好友</text>
+			<text class="subtitle">把地球另一端的「另一个你」告诉朋友</text>
 		</view>
 
 		<view class="preview card">
@@ -9,45 +13,119 @@
 				<text class="preview-app">对面的我</text>
 				<view class="preview-row">
 					<text class="preview-label">我在</text>
-					<text class="preview-value">{{ selectedCity }}</text>
+					<text class="preview-value">{{ displayOriginCity }}</text>
 				</view>
 				<view class="preview-row">
 					<text class="preview-label">另一个我在</text>
-					<text class="preview-value">{{ result.antipodeLocation }}</text>
+					<text class="preview-value">{{ displayLocationLabel }}</text>
 				</view>
 				<view class="preview-row">
 					<text class="preview-label">当地时间</text>
-					<text class="preview-value">{{ result.localTime }}</text>
+					<text class="preview-value">{{ displayLocalTime }}</text>
 				</view>
 				<view class="preview-row">
 					<text class="preview-label">此刻它正在</text>
-					<text class="preview-value">{{ result.currentStatusLabel }}</text>
+					<text class="preview-value">{{ displayCurrentTitle }}</text>
 				</view>
 				<view class="preview-divider" />
-				<text class="preview-quote">地球另一端的我，正在过另一种此刻。</text>
+				<text class="preview-quote">{{ displayShareText }}</text>
 			</view>
 		</view>
 
+		<view class="share-guide card">
+			<view class="share-guide-corner" aria-hidden="true">
+				<text class="corner-dots">···</text>
+			</view>
+			<text class="share-guide-title">如何分享</text>
+			<text class="share-guide-step">1. 点击屏幕右上角「 ··· 」菜单</text>
+			<text class="share-guide-step">2. 选择「发送给朋友」或「分享到朋友圈」完成分享</text>
+			<text class="share-guide-hint">好友打开后将进入小程序首页，可体验「对面的我」</text>
+		</view>
+
 		<view class="actions">
-			<button class="btn btn-primary" @click="saveImage">保存图片</button>
+			<!-- V1 暂不开放保存图片 -->
+			<!-- #ifdef MP-WEIXIN -->
+			<button class="btn btn-primary btn-share" open-type="share">分享</button>
+			<!-- #endif -->
 			<button class="btn btn-secondary" @click="goBack">返回结果页</button>
 		</view>
 	</view>
 </template>
 
 <script setup lang="ts">
-import { MOCK_RESULT } from '../../utils/mock'
-import { getSession } from '../../utils/session'
+import { computed, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import type { VirtualProfile } from '../../types/virtualProfile'
+import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
+import { fetchActiveProfileFromCloud, redirectToHome } from '../../utils/profileStorage'
+import { updateSharePagePayload } from '../../utils/sharePagePayload'
 
-const session = getSession()
-const selectedCity = session.selectedCity
-const result = MOCK_RESULT
+const activeProfile = ref<VirtualProfile | null>(null)
+const isLoading = ref(true)
 
-function saveImage() {
-	uni.showToast({
-		title: 'V1 暂未生成真实图片',
-		icon: 'none'
+onLoad(async () => {
+	isLoading.value = true
+	const profile = await fetchActiveProfileFromCloud()
+	isLoading.value = false
+
+	if (!profile || !profile.result) {
+		redirectToHome()
+		return
+	}
+
+	activeProfile.value = profile
+	updateSharePagePayload(buildSharePayload())
+
+	// #ifdef MP-WEIXIN
+	uni.showShareMenu({
+		withShareTicket: true,
+		menus: ['shareAppMessage', 'shareTimeline']
 	})
+	// #endif
+})
+
+const displayResult = computed(() => activeProfile.value!.result)
+
+const displayLocalTime = computed(() =>
+	formatAntipodeLocalTime(
+		activeProfile.value?.metadata?.timezoneData,
+		new Date(),
+		activeProfile.value?.result?.localTime
+	)
+)
+
+const displayOriginCity = computed(() => activeProfile.value!.originLocation.cityName)
+
+const displayLocationLabel = computed(() => activeProfile.value!.targetLocation.locationLabel)
+
+const displayCurrentTitle = computed(() => displayResult.value.currentTitle)
+
+const displayShareText = computed(() => displayResult.value.shareText)
+
+function buildSharePayload() {
+	const profile = activeProfile.value
+	const defaultTitle = '对面的我 — 看看地球另一端的你正在做什么'
+
+	if (!profile || !profile.result) {
+		return {
+			title: defaultTitle,
+			path: '/pages/index/index'
+		}
+	}
+
+	const originCity = profile.originLocation.cityName
+	const otherPlace = profile.targetLocation.locationLabel
+	const localTime = formatAntipodeLocalTime(
+		profile.metadata?.timezoneData,
+		new Date(),
+		profile.result.localTime
+	)
+	const activity = profile.result.currentTitle.replace(/^另一个你正在/, '')
+
+	return {
+		title: `我在${originCity}，另一个我在${otherPlace}（当地 ${localTime}）正在${activity}`,
+		path: '/pages/index/index'
+	}
 }
 
 function goBack() {
@@ -55,12 +133,38 @@ function goBack() {
 }
 </script>
 
+<script lang="ts">
+import { getSharePagePayload } from '../../utils/sharePagePayload'
+
+/** 微信小程序要求页面在 Options 中声明分享生命周期，script setup  alone 可能不生效 */
+export default {
+	onShareAppMessage() {
+		return getSharePagePayload()
+	},
+	onShareTimeline() {
+		const { title } = getSharePagePayload()
+		return { title }
+	}
+}
+</script>
+
 <style lang="scss" scoped>
 .page {
 	min-height: 100vh;
-	padding: 32rpx 40rpx 64rpx;
+	padding: 200rpx 40rpx 64rpx;
 	background: $am-bg;
 	box-sizing: border-box;
+}
+
+.page--loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.loading-text {
+	font-size: 28rpx;
+	color: $am-text-muted;
 }
 
 .header {
@@ -68,9 +172,72 @@ function goBack() {
 }
 
 .title {
+	display: block;
 	font-size: 40rpx;
 	font-weight: 600;
 	color: $am-text;
+}
+
+.subtitle {
+	display: block;
+	margin-top: 12rpx;
+	font-size: 26rpx;
+	color: $am-text-muted;
+	line-height: 1.5;
+}
+
+.share-guide {
+	position: relative;
+	padding: 36rpx 32rpx 32rpx;
+	margin-bottom: 40rpx;
+	overflow: hidden;
+}
+
+.share-guide-corner {
+	position: absolute;
+	top: 20rpx;
+	right: 24rpx;
+	width: 72rpx;
+	height: 48rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12rpx;
+	background: rgba(230, 168, 92, 0.15);
+	border: 2rpx dashed $am-primary;
+}
+
+.corner-dots {
+	font-size: 36rpx;
+	font-weight: 700;
+	color: $am-primary;
+	letter-spacing: 2rpx;
+	line-height: 1;
+}
+
+.share-guide-title {
+	display: block;
+	font-size: 30rpx;
+	font-weight: 600;
+	color: $am-text;
+	margin-bottom: 20rpx;
+	padding-right: 80rpx;
+}
+
+.share-guide-step {
+	display: block;
+	font-size: 28rpx;
+	color: $am-text;
+	line-height: 1.65;
+	margin-bottom: 12rpx;
+}
+
+.share-guide-hint {
+	display: block;
+	margin-top: 16rpx;
+	font-size: 24rpx;
+	color: $am-text-muted;
+	line-height: 1.55;
 }
 
 .card {
@@ -153,6 +320,10 @@ function goBack() {
 	background: $am-primary;
 	color: #fff;
 	box-shadow: 0 8rpx 20rpx rgba(230, 168, 92, 0.35);
+}
+
+.btn-share {
+	margin-bottom: 0;
 }
 
 .btn-secondary {

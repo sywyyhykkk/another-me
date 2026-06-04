@@ -1,19 +1,24 @@
 <template>
-	<view class="page">
+	<view v-if="isLoading" class="page page--loading">
+		<text class="loading-text">正在加载...</text>
+	</view>
+	<view v-else-if="activeProfile" class="page">
 		<view class="header">
 			<text class="title">另一个我的今天</text>
-			<text class="subtitle">当地时间 {{ result.localTime }} · {{ result.antipodeLocation }}</text>
+			<text class="subtitle">
+				当地时间 {{ displayLocalTime }} · {{ displayLocationLabel }}
+			</text>
 		</view>
 
 		<view class="current card">
 			<text class="current-label">现在</text>
-			<text class="current-text">{{ result.currentStatusLabel }}</text>
+			<text class="current-text">{{ currentLabel }}</text>
 		</view>
 
 		<view class="timeline card">
 			<view
 				v-for="(item, index) in timeline"
-				:key="item.time"
+				:key="`${item.time}-${item.title}`"
 				class="timeline-item"
 				:class="{ 'timeline-item--current': item.isCurrent }"
 			>
@@ -23,7 +28,7 @@
 				</view>
 				<view class="timeline-content">
 					<text class="timeline-time">{{ item.time }}</text>
-					<text class="timeline-activity">{{ item.activity }}</text>
+					<text class="timeline-activity">{{ item.title }}</text>
 				</view>
 			</view>
 		</view>
@@ -35,10 +40,47 @@
 </template>
 
 <script setup lang="ts">
-import { MOCK_RESULT, MOCK_TIMELINE } from '../../utils/mock'
+import { computed, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import type { VirtualProfile } from '../../types/virtualProfile'
+import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
+import {
+	fetchActiveProfileFromCloud,
+	getCurrentTimelineLabel,
+	redirectToHome
+} from '../../utils/profileStorage'
 
-const result = MOCK_RESULT
-const timeline = MOCK_TIMELINE
+const activeProfile = ref<VirtualProfile | null>(null)
+const isLoading = ref(true)
+
+onLoad(async () => {
+	isLoading.value = true
+	const profile = await fetchActiveProfileFromCloud()
+	isLoading.value = false
+
+	if (!profile || !profile.result) {
+		redirectToHome()
+		return
+	}
+
+	activeProfile.value = profile
+})
+
+const displayResult = computed(() => activeProfile.value!.result)
+
+const displayLocalTime = computed(() =>
+	formatAntipodeLocalTime(
+		activeProfile.value?.metadata?.timezoneData,
+		new Date(),
+		activeProfile.value?.result?.localTime
+	)
+)
+
+const displayLocationLabel = computed(() => activeProfile.value!.targetLocation.locationLabel)
+
+const timeline = computed(() => displayResult.value.timeline)
+
+const currentLabel = computed(() => getCurrentTimelineLabel(displayResult.value))
 
 function goBack() {
 	uni.navigateBack()
@@ -48,9 +90,20 @@ function goBack() {
 <style lang="scss" scoped>
 .page {
 	min-height: 100vh;
-	padding: 32rpx 40rpx 180rpx;
+	padding: 200rpx 40rpx 64rpx;
 	background: $am-bg;
 	box-sizing: border-box;
+}
+
+.page--loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.loading-text {
+	font-size: 28rpx;
+	color: $am-text-muted;
 }
 
 .header {
@@ -168,7 +221,6 @@ function goBack() {
 }
 
 .footer {
-	position: fixed;
 	left: 0;
 	right: 0;
 	bottom: 0;

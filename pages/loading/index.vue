@@ -22,14 +22,22 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { LOADING_STEPS } from '../../utils/mock'
+import { createVirtualProfile } from '../../api/virtualProfile'
+import { LOADING_STEPS } from '../../utils/loadingSteps'
+import { buildCreateProfilePayload } from '../../utils/profileBuilder'
 
 const steps = LOADING_STEPS
 const activeStep = ref(-1)
-let stepTimer: ReturnType<typeof setInterval> | null = null
-let jumpTimer: ReturnType<typeof setTimeout> | null = null
+const isCreating = ref(false)
 
-onMounted(() => {
+let stepTimer: ReturnType<typeof setInterval> | null = null
+let startedAt = 0
+
+onMounted(async () => {
+	if (isCreating.value) return
+	isCreating.value = true
+	startedAt = Date.now()
+
 	let step = 0
 	activeStep.value = 0
 
@@ -40,23 +48,52 @@ onMounted(() => {
 		}
 	}, 400)
 
-	jumpTimer = setTimeout(() => {
-		uni.redirectTo({
-			url: '/pages/result/index'
+	try {
+		const payload = await buildCreateProfilePayload()
+		const res = await createVirtualProfile(payload)
+
+		if (!res.success || !res.data) {
+			throw new Error(res.message || 'create profile failed')
+		}
+
+		const elapsed = Date.now() - startedAt
+		const remain = Math.max(0, 1500 - elapsed)
+
+		setTimeout(() => {
+			uni.redirectTo({
+				url: '/pages/result/index'
+			})
+		}, remain)
+	} catch (error) {
+		console.error('[loading] createVirtualProfile failed', error)
+		isCreating.value = false
+
+		uni.showModal({
+			title: '生成失败',
+			content: '暂时无法生成你的另一个我，请稍后再试。',
+			showCancel: false,
+			success: () => {
+				uni.navigateBack({
+					fail: () => {
+						uni.reLaunch({
+							url: '/pages/index/index'
+						})
+					}
+				})
+			}
 		})
-	}, 2000)
+	}
 })
 
 onUnmounted(() => {
 	if (stepTimer) clearInterval(stepTimer)
-	if (jumpTimer) clearTimeout(jumpTimer)
 })
 </script>
 
 <style lang="scss" scoped>
 .page {
 	min-height: 100vh;
-	padding: 80rpx 40rpx;
+	padding: 248rpx 40rpx 64rpx;
 	background: $am-bg;
 	box-sizing: border-box;
 	display: flex;
