@@ -1,13 +1,53 @@
 {
 	"pages": [
 		{
-			"path": "pages/index/index"
+			"path": "pages/index/index",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/location-select/index",
+			"style": {
+				"navigationBarTitleText": "手动选择位置"
+			}
+		},
+		{
+			"path": "pages/avatar-select/index",
+			"style": {
+				"navigationBarTitleText": "选择形象"
+			}
+		},
+		{
+			"path": "pages/loading/index",
+			"style": {
+				"navigationBarTitleText": "正在生成"
+			}
+		},
+		{
+			"path": "pages/result/index",
+			"style": {
+				"navigationBarTitleText": "另一个我"
+			}
+		},
+		{
+			"path": "pages/timeline/index",
+			"style": {
+				"navigationBarTitleText": "今天的一天"
+			}
+		},
+		{
+			"path": "pages/share/index",
+			"style": {
+				"navigationBarTitleText": "分享卡片"
+			}
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarBackgroundColor": "#FFFFFF",
-		"backgroundColor": "#FFFFFF"
+		"navigationBarTitleText": "对面的我",
+		"navigationBarBackgroundColor": "#FFF7EA",
+		"backgroundColor": "#FFF7EA"
 	},
 	"uniIdRouter": {}
 }
