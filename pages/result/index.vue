@@ -60,6 +60,21 @@
 				<text class="info-label">与你相隔</text>
 				<text class="info-value">{{ displayDistance }}</text>
 			</view>
+
+			<view v-if="displaySunrise" class="info-row">
+				<text class="info-label">当地日出</text>
+				<text class="info-value">{{ displaySunrise }}</text>
+			</view>
+
+			<view v-if="displaySunset" class="info-row">
+				<text class="info-label">当地日落</text>
+				<text class="info-value">{{ displaySunset }}</text>
+			</view>
+
+			<view v-if="displayCountryName" class="info-row">
+				<text class="info-label">所在国家</text>
+				<text class="info-value">{{ displayCountryName }}</text>
+			</view>
 		</view>
 
 		<view class="actions">
@@ -209,6 +224,26 @@ const displayTargetCoords = computed(() => {
 const displayDistance = computed(() => {
 	return formatDistanceKm(displayResult.value.distanceKm)
 })
+
+function extractClock(value?: string) {
+	if (!value || typeof value !== 'string') {
+		return ''
+	}
+	const parts = value.trim().split(/\s+/)
+	return parts.length > 1 ? parts[1] : parts[0]
+}
+
+const displaySunrise = computed(() =>
+	extractClock(activeProfile.value?.metadata?.timezoneData?.sunrise)
+)
+
+const displaySunset = computed(() =>
+	extractClock(activeProfile.value?.metadata?.timezoneData?.sunset)
+)
+
+const displayCountryName = computed(
+	() => activeProfile.value?.metadata?.timezoneData?.countryName || ''
+)
 
 function goTimeline() {
 	uni.navigateTo({

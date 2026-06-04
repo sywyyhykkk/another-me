@@ -455,7 +455,9 @@ function normalizeGeonamesTimezone(timezone) {
     countryCode: timezone.countryCode,
     countryName: timezone.countryName,
     rawOffset,
-    dstOffset
+    dstOffset,
+    sunrise: timezone.sunrise,
+    sunset: timezone.sunset
   }
 }
 
@@ -519,7 +521,7 @@ function roundCoord(value) {
 function buildGeoCacheId(lat, lng) {
   const safeLat = String(lat).replace('-', 'm').replace('.', 'p')
   const safeLng = String(lng).replace('-', 'm').replace('.', 'p')
-  return `anti_${safeLat}_${safeLng}_v1`
+  return `anti_${safeLat}_${safeLng}_v2`
 }
 
 function httpsGetJson(url) {
@@ -642,7 +644,9 @@ async function fetchTimezone(antipode, nearestPlace, username) {
       countryCode: data.countryCode,
       countryName: data.countryName,
       rawOffset: data.rawOffset,
-      dstOffset: data.dstOffset
+      dstOffset: data.dstOffset,
+      sunrise: data.sunrise,
+      sunset: data.sunset
     })
   } catch (error) {
     console.warn('[geoResolver] fetchTimezone failed:', error)

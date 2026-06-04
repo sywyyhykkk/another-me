@@ -73,6 +73,8 @@ export interface GeoTimezoneData {
 	countryName?: string
 	rawOffset?: number
 	dstOffset?: number
+	sunrise?: string
+	sunset?: string
 }
 
 export interface VirtualProfileResult {

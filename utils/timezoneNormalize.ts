@@ -22,7 +22,9 @@ export function normalizeTimezoneForUse(
 		countryCode: timezone.countryCode,
 		countryName: timezone.countryName,
 		rawOffset,
-		dstOffset
+		dstOffset,
+		sunrise: timezone.sunrise,
+		sunset: timezone.sunset
 	}
 }
 
