@@ -2,7 +2,7 @@
 /**
  * 同步云开发资源：
  * - cloudfunctions/env.config.js → 各云函数目录
- * - cloudfunctions/_shared → virtualProfile/shared、activityEngine/shared
+ * - cloudfunctions/_shared → virtualProfile/shared
  * - ENV_ID → config/cloud.ts
  */
 const fs = require('fs')
@@ -11,8 +11,8 @@ const path = require('path')
 const ROOT = path.join(__dirname, '..')
 const ENV_SRC = path.join(ROOT, 'cloudfunctions/env.config.js')
 const SHARED_SRC = path.join(ROOT, 'cloudfunctions/_shared')
-const CLOUD_FN_NAMES = ['virtualProfile', 'geoResolver', 'activityEngine', 'assetResolver']
-const SHARED_FN_NAMES = ['virtualProfile', 'activityEngine']
+const CLOUD_FN_NAMES = ['virtualProfile', 'geoResolver']
+const SHARED_FN_NAMES = ['virtualProfile']
 
 function copyFile(src, dest) {
 	fs.mkdirSync(path.dirname(dest), { recursive: true })

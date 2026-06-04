@@ -1,4 +1,3 @@
-/** 将创建档案失败原因转为用户可读文案 */
 export function getCreateProfileErrorMessage(
 	error: unknown,
 	serverMessage?: string

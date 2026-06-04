@@ -25,6 +25,8 @@ exports.main = async (event, context) => {
         return await resolveTarget(payload)
       case 'resolveOrigin':
         return await resolveOrigin(payload)
+      case 'resolveCombined':
+        return await resolveCombined(payload)
       default:
         return {
           success: false,
@@ -36,6 +38,41 @@ exports.main = async (event, context) => {
     return {
       success: false,
       message: error && error.message ? error.message : 'Internal error'
+    }
+  }
+}
+
+async function resolveCombined(payload) {
+  const originLocation = payload && payload.originLocation
+  if (!validateOriginLocation(originLocation)) {
+    return { success: false, message: 'Invalid payload' }
+  }
+
+  const targetMode = (payload && payload.targetMode) || 'antipode'
+  const enrichOrigin = Boolean(payload && payload.enrichOrigin)
+
+  const [originRes, targetRes] = await Promise.all([
+    enrichOrigin
+      ? resolveOrigin({
+          latitude: originLocation.latitude,
+          longitude: originLocation.longitude
+        })
+      : Promise.resolve(null),
+    resolveTarget({ originLocation, targetMode })
+  ])
+
+  if (!targetRes || !targetRes.success || !targetRes.data) {
+    return {
+      success: false,
+      message: (targetRes && targetRes.message) || 'Geo resolve failed'
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      origin: originRes && originRes.success ? originRes.data : null,
+      target: targetRes.data
     }
   }
 }
@@ -228,7 +265,6 @@ function haversineDistanceKm(lat1, lng1, lat2, lng2) {
   return Math.round(earthRadiusKm * c)
 }
 
-/** 20km 内有城市：对蹠点到该城距离；否则：用户位置到对蹠点的大圆距离 */
 function computeDistanceKm(originLocation, antipode, nearestPlace) {
   if (nearestPlace) {
     return nearestPlace.distanceKm
@@ -355,6 +391,9 @@ async function getGeoCache(cacheId) {
   try {
     const res = await db.collection(GEO_CACHE).doc(cacheId).get()
     if (res.data && res.data.cacheKey) {
+      if (res.data.timezone) {
+        res.data.timezone = normalizeGeonamesTimezone(res.data.timezone)
+      }
       return res.data
     }
     return null
@@ -387,8 +426,25 @@ function normalizeNearestPlaceForCache(nearestPlace) {
   }
 }
 
-function normalizeTimezoneForCache(timezone) {
-  if (!timezone || !timezone.timezoneId) {
+function normalizeGeonamesTimezone(timezone) {
+  if (!timezone) {
+    return null
+  }
+
+  const toOffsetSeconds = (hours) => {
+    if (typeof hours !== 'number' || Number.isNaN(hours)) {
+      return undefined
+    }
+    if (Math.abs(hours) <= 18) {
+      return Math.round(hours * 3600)
+    }
+    return Math.round(hours)
+  }
+
+  const rawOffset = toOffsetSeconds(timezone.rawOffset)
+  const dstOffset = toOffsetSeconds(timezone.dstOffset)
+
+  if (!timezone.timezoneId && rawOffset === undefined && dstOffset === undefined) {
     return null
   }
 
@@ -397,9 +453,17 @@ function normalizeTimezoneForCache(timezone) {
     time: timezone.time,
     countryCode: timezone.countryCode,
     countryName: timezone.countryName,
-    rawOffset: timezone.rawOffset,
-    dstOffset: timezone.dstOffset
+    rawOffset,
+    dstOffset
   }
+}
+
+function normalizeTimezoneForCache(timezone) {
+  const normalized = normalizeGeonamesTimezone(timezone)
+  if (!normalized || !normalized.timezoneId) {
+    return null
+  }
+  return normalized
 }
 
 async function saveGeoCache(cacheId, antipode, roundedAntipode, geoData) {
@@ -420,7 +484,6 @@ async function saveGeoCache(cacheId, antipode, roundedAntipode, geoData) {
       updatedAt: db.serverDate()
     }
 
-    // 用 set 整文档覆盖：update 在 ocean/nearestPlace 曾为 null 时无法写入子字段
     await db.collection(GEO_CACHE).doc(cacheId).set({ data: payload })
   } catch (error) {
     console.warn('[geoResolver] save cache failed:', error)
@@ -572,14 +635,14 @@ async function fetchTimezone(antipode, nearestPlace, username) {
       return null
     }
 
-    return {
+    return normalizeGeonamesTimezone({
       timezoneId: data.timezoneId,
       time: data.time,
       countryCode: data.countryCode,
       countryName: data.countryName,
       rawOffset: data.rawOffset,
       dstOffset: data.dstOffset
-    }
+    })
   } catch (error) {
     console.warn('[geoResolver] fetchTimezone failed:', error)
     return null

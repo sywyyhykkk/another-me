@@ -6,7 +6,6 @@ import type {
 	VirtualProfileResult
 } from '../types/virtualProfile'
 
-/** 仅用于创建流程的临时本地状态（定位、选城、选形象），不含虚拟形象档案 */
 export const STORAGE_KEYS = {
 	userLocation: 'otherMe:userLocation',
 	locationMode: 'otherMe:locationMode',
@@ -14,12 +13,6 @@ export const STORAGE_KEYS = {
 	selectedAvatar: 'otherMe:selectedAvatar'
 } as const
 
-/**
- * 从云数据库（virtualProfile.getActive）拉取当前激活的虚拟形象。
- * getActive 会在云端按需刷新档案：同一对端当地日程时段内复用缓存，不重复调用 geo/activity 云函数。
- * 传 forceRefresh: true 可强制重新拉取 geo/activity 并写回档案。
- * 档案数据只存云端，不写入本地缓存。
- */
 export async function fetchActiveProfileFromCloud(options?: {
 	forceRefresh?: boolean
 }): Promise<VirtualProfile | null> {
@@ -43,7 +36,6 @@ export function redirectToHome() {
 	})
 }
 
-/** 创建流程中的临时数据（重新选择时清理） */
 export function clearOnboardingFlowCache() {
 	uni.removeStorageSync(STORAGE_KEYS.selectedAvatar)
 	uni.removeStorageSync(STORAGE_KEYS.selectedCity)

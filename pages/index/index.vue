@@ -39,7 +39,7 @@
 			</view>
 
 			<text class="privacy">
-				我们只会使用你的位置来计算地球另一端的位置，不会展示你的精确地址。
+				我们只会使用你的模糊位置来计算地球另一端的位置，不会展示你的精确地址。
 			</text>
 		</template>
 	</view>
@@ -102,20 +102,19 @@ function handleStart() {
 
 	isLocating.value = true
 
-	uni.getLocation({
+	uni.getFuzzyLocation({
 		type: 'wgs84',
 		success: (res) => {
 			saveUserLocation({
 				source: 'device',
 				latitude: res.latitude,
 				longitude: res.longitude,
-				accuracy: res.accuracy,
 				createdAt: Date.now()
 			})
 			goAvatarSelect()
 		},
 		fail: (err) => {
-			console.warn('getLocation failed', err.errMsg || err)
+			console.warn('getFuzzyLocation failed', err.errMsg || err)
 
 			uni.showModal({
 				title: '无法获取位置',
@@ -145,7 +144,6 @@ function handleManualSelect() {
 <script lang="ts">
 import { HOME_SHARE_PAYLOAD } from '../../utils/sharePagePayload'
 
-/** 微信小程序要求页面在 Options 中声明分享生命周期 */
 export default {
 	onShareAppMessage() {
 		return { ...HOME_SHARE_PAYLOAD }

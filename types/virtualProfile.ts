@@ -3,7 +3,6 @@ export type AvatarRole = 'office_worker' | 'student' | 'freelancer' | 'traveler'
 export type TargetMode = 'antipode' | 'custom_location'
 export type LandingMode = 'exact_land' | 'near_land' | 'deep_ocean'
 
-/** 设备定位时 GeoNames 逆地理解析结果（resolveOrigin） */
 export interface OriginGeoResolved {
 	source: 'device_reverse'
 	cityName: string
@@ -29,7 +28,6 @@ export interface OriginLocation {
 	latitude: number
 	longitude: number
 	accuracy?: number
-	/** 仅 device 逆地理成功时有值 */
 	geoResolved?: OriginGeoResolved | null
 }
 
@@ -68,7 +66,6 @@ export interface VideoAsset {
 	durationSeconds: number
 }
 
-/** 与 cloudfunctions/geoResolver fetchTimezone 返回一致 */
 export interface GeoTimezoneData {
 	timezoneId?: string
 	time?: string
@@ -86,7 +83,6 @@ export interface VirtualProfileResult {
 	currentState: string
 	currentTitle: string
 	currentDescription: string
-	/** 根据角色与当前日程（上班/上课/闲逛/旅行）生成的心情 */
 	todayMood: string
 	distanceKm: number
 	timeline: ProfileTimelineItem[]
@@ -105,7 +101,6 @@ export interface VirtualProfile {
 	selectedAvatar: SelectedAvatar
 	creationSource: 'onboarding' | 'manual' | 'future_custom'
 	originLocation: OriginLocation
-	/** 相对 origin 的精确对蹠点坐标（geoResolver 计算） */
 	antipode?: AntipodeCoordinates
 	targetMode: TargetMode
 	targetLocation: TargetLocation
@@ -113,9 +108,7 @@ export interface VirtualProfile {
 	videoAsset?: VideoAsset | null
 	metadata: {
 		version: number
-		/** 云函数 PROFILE_SYNC_VERSION，用于判断档案是否已用最新逻辑回写 */
 		syncVersion?: number
-		/** 上次刷新时所在日程时段（role|活动标题|对端当地日期），相同时段内跳过云函数重建 */
 		activitySlotKey?: string
 		lastRefreshedAt?: string | Date
 		generator: 'real_v1' | 'future' | 'cloud_split_v1'

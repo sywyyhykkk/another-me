@@ -2,8 +2,11 @@ const cloud = require('wx-server-sdk')
 const { ENV_ID } = require('./env.config')
 const {
   getCurrentActivitySlot,
-  buildActivitySlotKey
+  buildActivitySlotKey,
+  normalizeTimezoneForUse
 } = require('./activitySchedule')
+const { buildActivityResult } = require('./shared/activityCore')
+const { resolveVideoAsset } = require('./shared/assetCore')
 
 cloud.init({
   env: ENV_ID
@@ -13,8 +16,7 @@ const db = cloud.database()
 
 const PROFILES = 'virtual_profiles'
 const SETTINGS = 'user_settings'
-/** 递增后 getActive 会强制用最新 geo/activity 逻辑回写档案 */
-const PROFILE_SYNC_VERSION = 4
+const PROFILE_SYNC_VERSION = 7
 
 let collectionsReady = false
 
@@ -153,22 +155,22 @@ async function createProfile(openid, payload) {
   await ensureCollections()
 
   const selectedAvatar = normalizeSelectedAvatar(payload.selectedAvatar)
-  const originLocation = await enrichOriginLocation(payload.originLocation)
   const targetMode = payload.targetMode || 'antipode'
-  const profileName =
-    payload.profileName || `${selectedAvatar.name} · ${originLocation.cityName}的另一端`
 
   const built = await buildProfileContent({
-    originLocation,
+    originLocation: payload.originLocation,
     selectedAvatar,
-    targetMode
+    targetMode,
+    enrichOrigin: needsOriginEnrich(payload.originLocation)
   })
 
   if (!built.ok) {
     return { success: false, message: built.message }
   }
 
-  const { antipode, targetLocation, result, videoAsset, metadata } = built.data
+  const { originLocation, antipode, targetLocation, result, videoAsset, metadata } = built.data
+  const profileName =
+    payload.profileName || `${selectedAvatar.name} · ${originLocation.cityName}的另一端`
 
   await archiveActiveProfiles(openid)
 
@@ -368,48 +370,38 @@ function normalizeSelectedAvatar(selectedAvatar) {
   }
 }
 
-async function enrichOriginLocation(originLocation) {
-  if (!originLocation || typeof originLocation.latitude !== 'number') {
-    return originLocation
+function formatCloudInvokeError(name, error) {
+  const msg = (error && error.message) || String(error)
+  if (/time/i.test(msg) && /(limit|timed out|exceeded)/i.test(msg)) {
+    return `${name} 调用超时，请确认该云函数已在控制台配置足够超时并重新部署`
   }
+  return `${name} 调用失败：${msg}`
+}
 
-  const needsEnrich =
-    originLocation.mode === 'device' || originLocation.cityName === '当前位置'
-
-  if (!needsEnrich) {
-    return originLocation
-  }
-
+async function invokeGeoResolver(action, payload) {
   try {
-    const geoRes = await cloud.callFunction({
+    const res = await cloud.callFunction({
       name: 'geoResolver',
-      data: {
-        action: 'resolveOrigin',
-        payload: {
-          latitude: originLocation.latitude,
-          longitude: originLocation.longitude
-        }
-      }
+      data: { action, payload }
     })
-
-    const result = geoRes.result
-    if (result && result.success && result.data) {
-      const geoResolved = buildOriginGeoResolved(result.data)
-      return {
-        ...originLocation,
-        mode: 'device',
-        cityName: result.data.cityName,
-        countryName: result.data.countryName,
-        geoResolved
-      }
-    }
-
-    console.warn('[virtualProfile] enrichOrigin failed:', result && result.message)
+    return res.result
   } catch (error) {
-    console.warn('[virtualProfile] enrichOrigin error:', error)
+    console.warn('[virtualProfile] geoResolver invoke failed:', error)
+    return { success: false, message: formatCloudInvokeError('geoResolver', error) }
   }
+}
 
-  return originLocation
+function mergeEnrichedOrigin(originLocation, originData) {
+  if (!originData) {
+    return originLocation
+  }
+  return {
+    ...originLocation,
+    mode: 'device',
+    cityName: originData.cityName || originLocation.cityName,
+    countryName: originData.countryName || originLocation.countryName,
+    geoResolved: buildOriginGeoResolved(originData)
+  }
 }
 
 function buildOriginGeoResolved(resolveOriginData) {
@@ -456,102 +448,120 @@ function normalizeAntipode(antipode, originLocation) {
   return null
 }
 
-async function resolveGeoData(originLocation, targetMode) {
-  const geoRes = await cloud.callFunction({
-    name: 'geoResolver',
-    data: {
-      action: 'resolveTarget',
-      payload: {
-        originLocation,
-        targetMode
-      }
-    }
-  })
+function normalizeGeoData(data, originLocation) {
+  if (!data) {
+    return null
+  }
+  return {
+    antipode: normalizeAntipode(data.antipode, originLocation),
+    targetLocation: data.targetLocation,
+    distanceKm: typeof data.distanceKm === 'number' ? data.distanceKm : 0,
+    geoMeta: data.geoMeta || null,
+    nearestPlace: data.nearestPlace || null,
+    ocean: data.ocean || null,
+    timezone: normalizeTimezoneForUse(data.timezone)
+  }
+}
 
-  const geoResult = geoRes.result
+async function resolveGeoData(originLocation, targetMode) {
+  const geoResult = await invokeGeoResolver('resolveTarget', { originLocation, targetMode })
   if (!geoResult || !geoResult.success || !geoResult.data) {
     return {
       ok: false,
       message: geoResult && geoResult.message ? geoResult.message : 'Geo resolve failed'
     }
   }
+  return { ok: true, data: normalizeGeoData(geoResult.data, originLocation) }
+}
 
-  const { antipode, targetLocation, distanceKm, geoMeta, nearestPlace, ocean, timezone } =
-    geoResult.data
+async function resolveCombinedGeo(originLocation, targetMode, enrichOrigin) {
+  const res = await invokeGeoResolver('resolveCombined', {
+    originLocation,
+    targetMode,
+    enrichOrigin: Boolean(enrichOrigin)
+  })
+  if (!res || !res.success || !res.data || !res.data.target) {
+    return { ok: false, message: (res && res.message) || 'Geo resolve failed' }
+  }
+  return {
+    ok: true,
+    origin: res.data.origin || null,
+    data: normalizeGeoData(res.data.target, originLocation)
+  }
+}
+
+function geoUsable(geo) {
+  return Boolean(
+    geo &&
+      geo.targetLocation &&
+      typeof geo.targetLocation.landingMode === 'string' &&
+      geo.timezone &&
+      geo.timezone.timezoneId &&
+      geo.geoMeta &&
+      geo.geoMeta.source &&
+      geo.geoMeta.source !== 'fallback'
+  )
+}
+
+function readStoredGeo(profile) {
+  const meta = profile.metadata || {}
+  return {
+    antipode: normalizeAntipode(profile.antipode, profile.originLocation),
+    targetLocation: profile.targetLocation || null,
+    distanceKm:
+      profile.result && typeof profile.result.distanceKm === 'number'
+        ? profile.result.distanceKm
+        : 0,
+    geoMeta: meta.geo || null,
+    nearestPlace: meta.nearestPlace || null,
+    ocean: meta.ocean || null,
+    timezone: normalizeTimezoneForUse(meta.timezoneData || null)
+  }
+}
+
+function buildResultFromGeo(originLocation, selectedAvatar, geo, existingVideoAsset) {
+  const antipode = geo.antipode
+  const timezone = geo.timezone
+
+  const result = buildActivityResult({
+    selectedAvatar,
+    distanceKm: geo.distanceKm,
+    geoMeta: geo.geoMeta,
+    timezone,
+    antipode
+  })
+
+  if (!result) {
+    return { ok: false, message: 'Activity build failed' }
+  }
+
+  const videoAsset =
+    resolveVideoAsset({ avatarRole: selectedAvatar.role, currentState: result.currentState }) ||
+    existingVideoAsset ||
+    null
+
+  const antipodeLng =
+    antipode && typeof antipode.longitude === 'number' ? antipode.longitude : undefined
+  const activitySlotKey = computeActivitySlotKey(selectedAvatar.role, timezone, antipodeLng)
 
   return {
     ok: true,
     data: {
-      antipode: normalizeAntipode(antipode, originLocation),
-      targetLocation,
-      distanceKm,
-      geoMeta,
-      nearestPlace,
-      ocean,
-      timezone
+      antipode,
+      targetLocation: geo.targetLocation,
+      result,
+      videoAsset,
+      metadata: buildProfileMetadata({
+        geoMeta: geo.geoMeta,
+        nearestPlace: geo.nearestPlace,
+        ocean: geo.ocean,
+        timezone,
+        result,
+        videoAsset,
+        activitySlotKey
+      })
     }
   }
-}
-
-async function buildActivityResult({
-  originLocation,
-  selectedAvatar,
-  targetLocation,
-  distanceKm,
-  geoMeta,
-  timezone
-}) {
-  const activityRes = await cloud.callFunction({
-    name: 'activityEngine',
-    data: {
-      action: 'buildResult',
-      payload: {
-        originLocation,
-        selectedAvatar,
-        targetLocation,
-        distanceKm,
-        geoMeta,
-        timezone
-      }
-    }
-  })
-
-  const activityResult = activityRes.result
-  if (!activityResult || !activityResult.success || !activityResult.data) {
-    return {
-      ok: false,
-      message:
-        activityResult && activityResult.message ? activityResult.message : 'Activity build failed'
-    }
-  }
-
-  return { ok: true, data: activityResult.data }
-}
-
-async function resolveVideoAsset(selectedAvatar, result, targetLocation) {
-  try {
-    const assetRes = await cloud.callFunction({
-      name: 'assetResolver',
-      data: {
-        action: 'resolveVideo',
-        payload: {
-          avatarId: selectedAvatar.id,
-          avatarRole: selectedAvatar.role,
-          currentState: result.currentState,
-          landingMode: targetLocation.landingMode
-        }
-      }
-    })
-
-    const assetResult = assetRes.result
-    if (assetResult && assetResult.success && assetResult.data) {
-      return assetResult.data
-    }
-  } catch (error) {
-    console.warn('[virtualProfile] assetResolver failed, continue without videoAsset', error)
-  }
-
-  return null
 }
 
 function needsOriginEnrich(originLocation) {
@@ -561,15 +571,38 @@ function needsOriginEnrich(originLocation) {
   return originLocation.mode === 'device' || originLocation.cityName === '当前位置'
 }
 
-function computeActivitySlotKey(role, timezone) {
-  const slot = getCurrentActivitySlot(role, timezone, new Date())
+function computeActivitySlotKey(role, timezone, antipodeLongitude) {
+  const slot = getCurrentActivitySlot(role, timezone, new Date(), antipodeLongitude)
   if (!slot || !slot.localDateKey) {
     return null
   }
-  return buildActivitySlotKey(role, slot.activityTitle, slot.localDateKey)
+  return buildActivitySlotKey(role, slot.index, slot.localDateKey)
 }
 
-function canSkipProfileRefresh(profile, activitySlotKey) {
+function getStoredTimelineCurrentIndex(result) {
+  if (!result || !Array.isArray(result.timeline)) {
+    return -1
+  }
+  const index = result.timeline.findIndex((item) => item && item.isCurrent)
+  return index >= 0 ? index : -1
+}
+
+function needsActivityRefresh(profile, timezone, antipodeLongitude) {
+  if (!profile || !profile.result) {
+    return true
+  }
+
+  const selectedAvatar = normalizeSelectedAvatar(profile.selectedAvatar)
+  const slot = getCurrentActivitySlot(selectedAvatar.role, timezone, new Date(), antipodeLongitude)
+  if (!slot) {
+    return true
+  }
+
+  const storedIndex = getStoredTimelineCurrentIndex(profile.result)
+  return storedIndex !== slot.index
+}
+
+function profileIsUpToDate(profile, activitySlotKey, timezone, antipodeLongitude) {
   if (!activitySlotKey || !profile || !profile.result) {
     return false
   }
@@ -584,6 +617,10 @@ function canSkipProfileRefresh(profile, activitySlotKey) {
   }
 
   if (!meta.activitySlotKey || meta.activitySlotKey !== activitySlotKey) {
+    return false
+  }
+
+  if (needsActivityRefresh(profile, timezone, antipodeLongitude)) {
     return false
   }
 
@@ -609,7 +646,7 @@ function buildProfileMetadata({
     timezoneId: (timezone && timezone.timezoneId) || (geoMeta && geoMeta.timezone) || undefined,
     countryCode:
       (timezone && timezone.countryCode) || (geoMeta && geoMeta.countryCode) || undefined,
-    timezoneData: timezone || null,
+    timezoneData: normalizeTimezoneForUse(timezone) || null,
     activity: (result && result.activityMeta) || null,
     asset: videoAsset
       ? {
@@ -622,61 +659,34 @@ function buildProfileMetadata({
   }
 }
 
-async function buildProfileContent({ originLocation, selectedAvatar, targetMode, existingVideoAsset }) {
-  const geo = await resolveGeoData(originLocation, targetMode)
-  if (!geo.ok) {
-    return { ok: false, message: geo.message }
+async function buildProfileContent({
+  originLocation,
+  selectedAvatar,
+  targetMode,
+  enrichOrigin,
+  existingVideoAsset
+}) {
+  const combined = await resolveCombinedGeo(originLocation, targetMode, enrichOrigin)
+  if (!combined.ok) {
+    return { ok: false, message: combined.message }
   }
 
-  let { antipode, targetLocation, distanceKm, geoMeta, nearestPlace, ocean, timezone } = geo.data
-  antipode = normalizeAntipode(antipode, originLocation)
+  const resolvedOrigin = enrichOrigin
+    ? mergeEnrichedOrigin(originLocation, combined.origin)
+    : originLocation
 
-  const activity = await buildActivityResult({
-    originLocation,
-    selectedAvatar,
-    targetLocation,
-    distanceKm,
-    geoMeta,
-    timezone
-  })
-
-  if (!activity.ok) {
-    return { ok: false, message: activity.message }
+  const built = buildResultFromGeo(resolvedOrigin, selectedAvatar, combined.data, existingVideoAsset)
+  if (!built.ok) {
+    return { ok: false, message: built.message }
   }
-
-  const result = activity.data
-  const videoAsset =
-    (await resolveVideoAsset(selectedAvatar, result, targetLocation)) || existingVideoAsset || null
-
-  const activitySlotKey = computeActivitySlotKey(selectedAvatar.role, timezone)
 
   return {
     ok: true,
     data: {
-      antipode,
-      targetLocation,
-      result,
-      videoAsset,
-      metadata: buildProfileMetadata({
-        geoMeta,
-        nearestPlace,
-        ocean,
-        timezone,
-        result,
-        videoAsset,
-        activitySlotKey
-      })
+      originLocation: resolvedOrigin,
+      ...built.data
     }
   }
-}
-
-function shouldReResolveVideoAsset(profile, result, targetLocation) {
-  const prevResult = profile.result || {}
-  const prevTarget = profile.targetLocation || {}
-  return (
-    result.currentState !== prevResult.currentState ||
-    targetLocation.landingMode !== prevTarget.landingMode
-  )
 }
 
 async function refreshProfileInPlace(profile, options = {}) {
@@ -690,100 +700,54 @@ async function refreshProfileInPlace(profile, options = {}) {
   }
 
   const selectedAvatar = normalizeSelectedAvatar(profile.selectedAvatar)
+  const forceRefresh = Boolean(options.forceRefresh)
+  const targetMode = profile.targetMode || 'antipode'
+
   let originLocation = profile.originLocation
+  let geo = readStoredGeo(profile)
+  let geoChanged = false
 
   if (needsOriginEnrich(originLocation)) {
-    originLocation = await enrichOriginLocation(originLocation)
-  }
-
-  const timezoneForSlot = (profile.metadata && profile.metadata.timezoneData) || null
-  const activitySlotKey = computeActivitySlotKey(selectedAvatar.role, timezoneForSlot)
-  const forceRefresh = Boolean(options.forceRefresh)
-
-  if (!forceRefresh && canSkipProfileRefresh(profile, activitySlotKey)) {
-    if (needsOriginEnrich(profile.originLocation) && originLocation !== profile.originLocation) {
-      const patch = {
-        originLocation,
-        updatedAt: db.serverDate()
-      }
-      try {
-        await db.collection(PROFILES).doc(profile._id).update({ data: patch })
-        return { ...profile, ...patch, updatedAt: new Date() }
-      } catch (error) {
-        console.warn('[virtualProfile] origin-only patch failed:', error)
-      }
+    const combined = await resolveCombinedGeo(originLocation, targetMode, true)
+    if (combined.ok) {
+      originLocation = mergeEnrichedOrigin(originLocation, combined.origin)
+      geo = combined.data
+      geoChanged = true
+    } else {
+      console.warn('[virtualProfile] refresh combined geo failed, keep stored geo:', combined.message)
     }
-    return profile
-  }
-
-  const targetMode = profile.targetMode || 'antipode'
-  const profileName = `${selectedAvatar.name} · ${originLocation.cityName}的另一端`
-
-  let antipode = normalizeAntipode(profile.antipode, originLocation)
-  let targetLocation = profile.targetLocation
-  let distanceKm = profile.result && typeof profile.result.distanceKm === 'number' ? profile.result.distanceKm : 0
-  let geoMeta = (profile.metadata && profile.metadata.geo) || null
-  let nearestPlace = (profile.metadata && profile.metadata.nearestPlace) || null
-  let ocean = (profile.metadata && profile.metadata.ocean) || null
-  let timezone = (profile.metadata && profile.metadata.timezoneData) || null
-
-  const geo = await resolveGeoData(originLocation, targetMode)
-  if (geo.ok) {
-    antipode = normalizeAntipode(geo.data.antipode, originLocation) || antipode
-    targetLocation = geo.data.targetLocation
-    distanceKm = geo.data.distanceKm
-    geoMeta = geo.data.geoMeta
-    nearestPlace = geo.data.nearestPlace
-    ocean = geo.data.ocean
-    timezone = geo.data.timezone
-  } else {
-    console.warn('[virtualProfile] refresh geo failed, keep stored geo:', geo.message)
-  }
-
-  const activity = await buildActivityResult({
-    originLocation,
-    selectedAvatar,
-    targetLocation,
-    distanceKm,
-    geoMeta,
-    timezone
-  })
-
-  if (!activity.ok) {
-    console.warn('[virtualProfile] refresh activity failed, keep stored result:', activity.message)
-    return profile
-  }
-
-  const result = activity.data
-  let videoAsset = profile.videoAsset || null
-
-  if (shouldReResolveVideoAsset(profile, result, targetLocation)) {
-    const resolved = await resolveVideoAsset(selectedAvatar, result, targetLocation)
-    if (resolved) {
-      videoAsset = resolved
+  } else if (!geoUsable(geo)) {
+    const resolved = await resolveGeoData(originLocation, targetMode)
+    if (resolved.ok) {
+      geo = resolved.data
+      geoChanged = true
+    } else {
+      console.warn('[virtualProfile] refresh geo failed, keep stored geo:', resolved.message)
     }
   }
 
-  const refreshedSlotKey = computeActivitySlotKey(selectedAvatar.role, timezone)
+  const antipodeLng =
+    geo.antipode && typeof geo.antipode.longitude === 'number' ? geo.antipode.longitude : undefined
+  const activitySlotKey = computeActivitySlotKey(selectedAvatar.role, geo.timezone, antipodeLng)
 
-  const metadata = buildProfileMetadata({
-    geoMeta,
-    nearestPlace,
-    ocean,
-    timezone,
-    result,
-    videoAsset,
-    activitySlotKey: refreshedSlotKey
-  })
+  if (!forceRefresh && !geoChanged && profileIsUpToDate(profile, activitySlotKey, geo.timezone, antipodeLng)) {
+    return profile
+  }
+
+  const built = buildResultFromGeo(originLocation, selectedAvatar, geo, profile.videoAsset || null)
+  if (!built.ok) {
+    console.warn('[virtualProfile] refresh activity failed, keep stored result:', built.message)
+    return profile
+  }
 
   const updateData = {
     originLocation,
-    antipode,
-    profileName,
-    targetLocation,
-    result,
-    videoAsset,
-    metadata,
+    antipode: built.data.antipode,
+    profileName: `${selectedAvatar.name} · ${originLocation.cityName}的另一端`,
+    targetLocation: built.data.targetLocation,
+    result: built.data.result,
+    videoAsset: built.data.videoAsset,
+    metadata: built.data.metadata,
     updatedAt: db.serverDate()
   }
 

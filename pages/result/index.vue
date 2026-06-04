@@ -37,9 +37,9 @@
 		</view>
 
 		<view class="activity card">
-			<text class="activity-text">{{ displayResult.currentTitle }}</text>
-			<text v-if="displayResult.currentDescription" class="activity-desc">
-				{{ displayResult.currentDescription }}
+			<text class="activity-text">{{ displayCurrentTitle }}</text>
+			<text v-if="displayCurrentDescription" class="activity-desc">
+				{{ displayCurrentDescription }}
 			</text>
 		</view>
 
@@ -85,6 +85,7 @@ import { deleteVirtualProfile } from '../../api/virtualProfile'
 import type { VirtualProfile } from '../../types/virtualProfile'
 import { APP_COLORS } from '../../config/theme'
 import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
+import { resolveLiveActivityDisplay } from '../../utils/liveActivity'
 import {
 	clearOnboardingFlowCache,
 	fetchActiveProfileFromCloud,
@@ -170,11 +171,26 @@ async function handleRefresh() {
 
 const displayResult = computed(() => activeProfile.value!.result)
 
+const antipodeLongitude = computed(() => activeProfile.value?.targetLocation?.longitude)
+
+const liveActivity = computed(() =>
+	resolveLiveActivityDisplay(
+		activeProfile.value?.metadata?.timezoneData,
+		activeProfile.value?.result,
+		new Date(),
+		antipodeLongitude.value
+	)
+)
+
+const displayCurrentTitle = computed(() => liveActivity.value.currentTitle)
+const displayCurrentDescription = computed(() => liveActivity.value.currentDescription)
+
 const displayLocalTime = computed(() =>
 	formatAntipodeLocalTime(
 		activeProfile.value?.metadata?.timezoneData,
 		new Date(),
-		activeProfile.value?.result?.localTime
+		'--:--',
+		antipodeLongitude.value
 	)
 )
 
@@ -184,7 +200,7 @@ const displayOriginCity = computed(() => activeProfile.value!.originLocation.cit
 
 const displayAvatarName = computed(() => activeProfile.value!.selectedAvatar.name)
 
-const displayTodayMood = computed(() => displayResult.value.todayMood || '平静')
+const displayTodayMood = computed(() => liveActivity.value.todayMood || '平静')
 
 const displayTargetCoords = computed(() => {
 	return formatCoordinates(displayTarget.value.latitude, displayTarget.value.longitude)

@@ -20,7 +20,6 @@ export const CITY_PRESETS: Record<string, CityPreset> = {
 
 export const DEFAULT_CITY_PRESET = CITY_PRESETS['昆明']
 
-/** 手动选城列表（与 CITY_PRESETS 一致，不含「当前位置」） */
 export const MANUAL_CITY_NAMES = Object.keys(CITY_PRESETS).filter((name) => name !== '当前位置')
 
 const AVATAR_ROLE_MAP: Record<string, AvatarRole> = {

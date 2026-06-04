@@ -43,7 +43,6 @@
 		</view>
 
 		<view class="actions">
-			<!-- V1 暂不开放保存图片 -->
 			<!-- #ifdef MP-WEIXIN -->
 			<button class="btn btn-primary btn-share" open-type="share">分享</button>
 			<!-- #endif -->
@@ -134,7 +133,8 @@ const displayLocalTime = computed(() =>
 	formatAntipodeLocalTime(
 		activeProfile.value?.metadata?.timezoneData,
 		new Date(),
-		activeProfile.value?.result?.localTime
+		'--:--',
+		activeProfile.value?.targetLocation?.longitude
 	)
 )
 
@@ -161,7 +161,8 @@ function buildSharePayloadFromProfile(profile: VirtualProfile) {
 	const localTime = formatAntipodeLocalTime(
 		profile.metadata?.timezoneData,
 		new Date(),
-		profile.result.localTime
+		'--:--',
+		profile.targetLocation?.longitude
 	)
 	const activity = profile.result.currentTitle.replace(/^另一个你正在/, '')
 
@@ -179,7 +180,6 @@ function goBack() {
 <script lang="ts">
 import { getSharePagePayload } from '../../utils/sharePagePayload'
 
-/** 微信小程序要求页面在 Options 中声明分享生命周期，script setup  alone 可能不生效 */
 export default {
 	onShareAppMessage() {
 		return getSharePagePayload()

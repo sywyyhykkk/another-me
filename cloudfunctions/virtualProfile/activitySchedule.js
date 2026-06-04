@@ -1,9 +1,11 @@
 const {
 	getCurrentActivitySlot,
-	buildActivitySlotKey
+	buildActivitySlotKey,
+	normalizeTimezoneForUse
 } = require('./shared/activityScheduleCore')
 
 module.exports = {
 	getCurrentActivitySlot,
-	buildActivitySlotKey
+	buildActivitySlotKey,
+	normalizeTimezoneForUse
 }

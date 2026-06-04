@@ -110,7 +110,8 @@ const displayLocalTime = computed(() =>
 	formatAntipodeLocalTime(
 		activeProfile.value?.metadata?.timezoneData,
 		new Date(),
-		activeProfile.value?.result?.localTime
+		'--:--',
+		activeProfile.value?.targetLocation?.longitude
 	)
 )
 
