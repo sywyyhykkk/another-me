@@ -1,6 +1,9 @@
 # 依赖
 node_modules/
 
+# 云函数部署副本（由 scripts/sync-cloud-assets.js 从 cloudfunctions/_shared 生成，勿提交）
+cloudfunctions/*/shared/
+
 # 使用 uni_modules/uni-icons 时仍保留 package.json 供 HBuilderX「npm 安装」
 
 # 编译产物

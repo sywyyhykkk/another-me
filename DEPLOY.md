@@ -1,5 +1,19 @@
 # 对面的我 — 部署说明
 
+## 换设备 / 首次 clone（必看）
+
+`cloudfunctions/*/shared/` 是由 `scripts/sync-cloud-assets.js` 从 `cloudfunctions/_shared/` **自动生成的部署副本**，已加入 `.gitignore`，不会进仓库。因此新设备 clone 后该目录不存在，**直接上传部署 `virtualProfile` 会报"找不到模块"**。
+
+clone 后任选其一即可生成（前端本地预览不受影响）：
+
+```bash
+npm install      # 已配置 postinstall，自动生成
+# 或
+npm run sync     # 等价于 node scripts/sync-cloud-assets.js
+```
+
+> 改云函数共享逻辑时只改 `cloudfunctions/_shared/`，部署前再 `npm run sync` 重新生成副本。
+
 ## 环境 ID（唯一配置源）
 
 编辑 `cloudfunctions/env.config.js` 中的 `ENV_ID`，然后执行：

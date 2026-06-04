@@ -64,7 +64,7 @@
 
 		<view class="actions">
 			<button class="btn btn-primary" @click="goTimeline">另一个我的一天</button>
-			<button class="btn btn-secondary" @click="goShare">分享给好友</button>
+			<button class="btn btn-secondary" @click="goShare">分享另一个我</button>
 			<button
 				class="btn-icon"
 				plain

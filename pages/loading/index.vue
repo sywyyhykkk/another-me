@@ -11,9 +11,27 @@
 				v-for="(step, index) in steps"
 				:key="step"
 				class="step-item"
-				:class="{ 'step-item--done': index <= activeStep }"
+				:class="{
+					'step-item--done': index < activeStep || allDone,
+					'step-item--active': index === activeStep && !allDone
+				}"
 			>
-				<view class="step-dot">{{ index <= activeStep ? '✓' : index + 1 }}</view>
+				<view class="step-dot">
+					<uni-icons
+						v-if="index < activeStep || allDone"
+						type="checkmarkempty"
+						:size="18"
+						color="#fff"
+					/>
+					<uni-icons
+						v-else-if="index === activeStep"
+						class="step-dot__spin"
+						type="spinner-cycle"
+						:size="18"
+						:color="APP_COLORS.secondary"
+					/>
+					<text v-else>{{ index + 1 }}</text>
+				</view>
 				<text class="step-text">{{ step }}</text>
 			</view>
 		</view>
@@ -26,59 +44,72 @@ import { createVirtualProfile } from '../../api/virtualProfile'
 import { LOADING_STEPS } from '../../utils/loadingSteps'
 import { getCreateProfileErrorMessage } from '../../utils/createProfileError'
 import { buildCreateProfilePayload } from '../../utils/profileBuilder'
+import { APP_COLORS } from '../../config/theme'
+
+const STEP_MIN_MS = 650
+const DONE_HOLD_MS = 450
 
 const steps = LOADING_STEPS
 const activeStep = ref(-1)
+const allDone = ref(false)
 const isCreating = ref(false)
 
-let stepTimer: ReturnType<typeof setInterval> | null = null
-let redirectTimer: ReturnType<typeof setTimeout> | null = null
-let startedAt = 0
+let cancelled = false
+const pendingTimers = new Set<ReturnType<typeof setTimeout>>()
 
-function clearStepTimer() {
-	if (stepTimer) {
-		clearInterval(stepTimer)
-		stepTimer = null
-	}
+function sleep(ms: number) {
+	return new Promise<void>((resolve) => {
+		const timer = setTimeout(() => {
+			pendingTimers.delete(timer)
+			resolve()
+		}, ms)
+		pendingTimers.add(timer)
+	})
+}
+
+function clearTimers() {
+	pendingTimers.forEach((timer) => clearTimeout(timer))
+	pendingTimers.clear()
 }
 
 onMounted(async () => {
 	if (isCreating.value) return
 	isCreating.value = true
-	startedAt = Date.now()
 
-	let step = 0
-	activeStep.value = 0
-
-	stepTimer = setInterval(() => {
-		step += 1
-		if (step < steps.length) {
-			activeStep.value = step
-		}
-	}, 400)
-
-	try {
+	const createPromise = (async () => {
 		const payload = await buildCreateProfilePayload()
 		const res = await createVirtualProfile(payload)
-
 		if (!res.success || !res.data) {
 			throw new Error(res.message || 'create profile failed')
 		}
+		return res
+	})()
+	createPromise.catch(() => {})
 
-		clearStepTimer()
-		activeStep.value = steps.length - 1
+	try {
+		for (let i = 0; i < steps.length; i += 1) {
+			if (cancelled) return
+			activeStep.value = i
 
-		const elapsed = Date.now() - startedAt
-		const remain = Math.max(0, 1500 - elapsed)
+			if (i < steps.length - 1) {
+				await sleep(STEP_MIN_MS)
+			} else {
+				await Promise.all([sleep(STEP_MIN_MS), createPromise])
+			}
+		}
 
-		redirectTimer = setTimeout(() => {
-			uni.redirectTo({
-				url: '/pages/result/index'
-			})
-		}, remain)
+		if (cancelled) return
+		allDone.value = true
+		await sleep(DONE_HOLD_MS)
+		if (cancelled) return
+
+		uni.redirectTo({
+			url: '/pages/result/index'
+		})
 	} catch (error) {
+		if (cancelled) return
 		console.error('[loading] createVirtualProfile failed', error)
-		clearStepTimer()
+		clearTimers()
 		isCreating.value = false
 
 		const serverMessage = error instanceof Error ? error.message : undefined
@@ -101,11 +132,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-	clearStepTimer()
-	if (redirectTimer) {
-		clearTimeout(redirectTimer)
-		redirectTimer = null
-	}
+	cancelled = true
+	clearTimers()
 })
 </script>
 
@@ -198,6 +226,14 @@ onUnmounted(() => {
 	flex-shrink: 0;
 }
 
+.step-item--active .step-dot {
+	background: rgba(143, 185, 150, 0.16);
+}
+
+.step-dot__spin {
+	animation: spin 0.9s linear infinite;
+}
+
 .step-item--done .step-dot {
 	background: $am-secondary;
 	color: #fff;
@@ -206,6 +242,11 @@ onUnmounted(() => {
 .step-text {
 	font-size: 28rpx;
 	color: $am-text-muted;
+}
+
+.step-item--active .step-text {
+	color: $am-text;
+	font-weight: 600;
 }
 
 .step-item--done .step-text {
