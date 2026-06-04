@@ -1,0 +1,13 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index"
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarBackgroundColor": "#FFFFFF",
+		"backgroundColor": "#FFFFFF"
+	},
+	"uniIdRouter": {}
+}
