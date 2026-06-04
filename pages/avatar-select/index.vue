@@ -14,7 +14,7 @@
 				@click="selectAvatar(avatar)"
 			>
 				<view class="avatar-face" :style="{ background: avatar.avatarColor }">
-					<text class="avatar-emoji">{{ getEmoji(avatar.id) }}</text>
+					<text class="avatar-emoji">{{ getAvatarEmoji(avatar.id) }}</text>
 				</view>
 				<view class="avatar-info">
 					<text class="avatar-name">{{ avatar.name }}</text>
@@ -40,35 +40,23 @@
 import { ref } from 'vue'
 import type { Avatar } from '../../types/index'
 import { toSelectedAvatar } from '../../utils/cityPresets'
-import { AVATARS } from '../../utils/avatars'
-import { STORAGE_KEYS } from '../../utils/profileStorage'
-import { getSession, setSelectedAvatar } from '../../utils/session'
+import { AVATARS, getAvatarEmoji } from '../../utils/avatars'
+import { STORAGE_KEYS, getCachedSelectedAvatar } from '../../utils/profileStorage'
 
 const avatars = AVATARS
-const session = getSession()
-const selectedAvatarId = ref(session.selectedAvatar?.id || '')
+const cachedAvatar = getCachedSelectedAvatar() as { id?: string } | null
+const selectedAvatarId = ref(cachedAvatar?.id || '')
 const isSubmitting = ref(false)
-
-function getEmoji(id: string) {
-	const map: Record<string, string> = {
-		office: '💼',
-		student: '📚',
-		free: '☕',
-		traveler: '🎒'
-	}
-	return map[id] || '🙂'
-}
 
 function selectAvatar(avatar: Avatar) {
 	selectedAvatarId.value = avatar.id
-	setSelectedAvatar(avatar)
 	uni.setStorageSync(
 		STORAGE_KEYS.selectedAvatar,
 		toSelectedAvatar({
 			id: avatar.id,
 			name: avatar.name,
 			description: avatar.description,
-			emoji: getEmoji(avatar.id)
+			emoji: getAvatarEmoji(avatar.id)
 		})
 	)
 }

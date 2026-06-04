@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import type { VirtualProfile } from '../../types/virtualProfile'
 import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
 import { fetchActiveProfileFromCloud, redirectToHome } from '../../utils/profileStorage'
@@ -63,26 +63,70 @@ import { updateSharePagePayload } from '../../utils/sharePagePayload'
 const activeProfile = ref<VirtualProfile | null>(null)
 const isLoading = ref(true)
 
-onLoad(async () => {
-	isLoading.value = true
-	const profile = await fetchActiveProfileFromCloud()
-	isLoading.value = false
+onLoad(() => {
+	loadProfile({ showFullPageLoading: true, setupShareMenu: true })
+})
+
+onShow(() => {
+	if (activeProfile.value && !isLoading.value) {
+		loadProfile({ silent: true })
+	}
+})
+
+async function loadProfile(options: {
+	showFullPageLoading?: boolean
+	silent?: boolean
+	setupShareMenu?: boolean
+} = {}) {
+	const { showFullPageLoading = false, silent = false, setupShareMenu = false } = options
+
+	if (showFullPageLoading) {
+		isLoading.value = true
+	}
+
+	let profile: VirtualProfile | null = null
+	try {
+		profile = await fetchActiveProfileFromCloud()
+	} catch (error) {
+		console.warn('[share] loadProfile failed', error)
+		if (showFullPageLoading || !activeProfile.value) {
+			if (showFullPageLoading) isLoading.value = false
+			redirectToHome()
+			return
+		}
+		if (!silent) {
+			uni.showToast({ title: '更新失败', icon: 'none' })
+		}
+		return
+	}
+
+	if (showFullPageLoading) {
+		isLoading.value = false
+	}
 
 	if (!profile || !profile.result) {
-		redirectToHome()
+		if (showFullPageLoading || !activeProfile.value) {
+			redirectToHome()
+			return
+		}
+		if (!silent) {
+			uni.showToast({ title: '更新失败', icon: 'none' })
+		}
 		return
 	}
 
 	activeProfile.value = profile
-	updateSharePagePayload(buildSharePayload())
+	updateSharePagePayload(buildSharePayloadFromProfile(profile))
 
-	// #ifdef MP-WEIXIN
-	uni.showShareMenu({
-		withShareTicket: true,
-		menus: ['shareAppMessage', 'shareTimeline']
-	})
-	// #endif
-})
+	if (setupShareMenu) {
+		// #ifdef MP-WEIXIN
+		uni.showShareMenu({
+			withShareTicket: true,
+			menus: ['shareAppMessage', 'shareTimeline']
+		})
+		// #endif
+	}
+}
 
 const displayResult = computed(() => activeProfile.value!.result)
 
@@ -102,11 +146,10 @@ const displayCurrentTitle = computed(() => displayResult.value.currentTitle)
 
 const displayShareText = computed(() => displayResult.value.shareText)
 
-function buildSharePayload() {
-	const profile = activeProfile.value
+function buildSharePayloadFromProfile(profile: VirtualProfile) {
 	const defaultTitle = '对面的我 — 看看地球另一端的你正在做什么'
 
-	if (!profile || !profile.result) {
+	if (!profile.result) {
 		return {
 			title: defaultTitle,
 			path: '/pages/index/index'

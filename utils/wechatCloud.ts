@@ -14,7 +14,7 @@ function getWx(): WechatWxWithCloud | undefined {
 	// #endif
 }
 
-export function isWechatCloudAvailable(): boolean {
+function isWechatCloudAvailable(): boolean {
 	// #ifdef MP-WEIXIN
 	const wxGlobal = getWx()
 	return typeof wxGlobal !== 'undefined' && !!wxGlobal?.cloud
@@ -43,7 +43,6 @@ export function initWechatCloud(): boolean {
 	})
 
 	hasCloudInited = true
-	console.log('[cloud] initialized:', WECHAT_CLOUD_ENV_ID)
 	return true
 	// #endif
 

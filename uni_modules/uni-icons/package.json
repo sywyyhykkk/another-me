@@ -1,0 +1,25 @@
+{
+	"id": "uni-icons",
+	"displayName": "uni-icons",
+	"version": "1.5.11",
+	"description": "图标组件",
+	"keywords": ["icon"],
+	"uni_modules": {
+		"dependencies": [],
+		"encrypt": [],
+		"platforms": {
+			"client": {
+				"App": { "app-vue": "y", "app-nvue": "y" },
+				"H5-mobile": { "Safari": "y", "Android Browser": "y" },
+				"H5-pc": { "Chrome": "y", "IE": "y", "Edge": "y", "Firefox": "y", "Safari": "y" },
+				"小程序": {
+					"微信": "y",
+					"阿里": "y",
+					"百度": "y",
+					"字节跳动": "y",
+					"QQ": "y"
+				}
+			}
+		}
+	}
+}

@@ -1,5 +1,11 @@
 const cloud = require('wx-server-sdk')
 const { ENV_ID } = require('./env.config')
+const {
+	getTimelineTemplate,
+	getCurrentTimelineIndex,
+	getLocalTimePartsFromTimezone,
+	resolveDayType
+} = require('./shared/activityScheduleCore')
 
 cloud.init({
   env: ENV_ID
@@ -79,79 +85,6 @@ function normalizeSelectedAvatar(selectedAvatar) {
     description: selectedAvatar.description || '',
     emoji: selectedAvatar.emoji || '💼'
   }
-}
-
-const TIMELINE_TEMPLATES = {
-  office_worker: [
-    { time: '00:00', title: '正在睡觉', state: 'sleeping' },
-    { time: '07:30', title: '起床', state: 'sleeping' },
-    { time: '08:15', title: '吃早餐', state: 'eating' },
-    { time: '09:00', title: '工作', state: 'working' },
-    { time: '12:30', title: '午餐', state: 'eating' },
-    { time: '15:00', title: '继续工作', state: 'working' },
-    { time: '18:30', title: '晚餐', state: 'eating' },
-    { time: '20:00', title: '放松', state: 'relaxing' },
-    { time: '23:00', title: '准备睡觉', state: 'sleeping' }
-  ],
-  student: [
-    { time: '00:00', title: '正在睡觉', state: 'sleeping' },
-    { time: '07:30', title: '起床', state: 'sleeping' },
-    { time: '08:15', title: '吃早餐', state: 'eating' },
-    { time: '09:00', title: '上课', state: 'studying' },
-    { time: '12:30', title: '午餐', state: 'eating' },
-    { time: '15:00', title: '继续学习', state: 'studying' },
-    { time: '18:30', title: '晚餐', state: 'eating' },
-    { time: '20:00', title: '发呆', state: 'relaxing' },
-    { time: '23:00', title: '准备睡觉', state: 'sleeping' }
-  ],
-  freelancer: [
-    { time: '00:00', title: '正在睡觉', state: 'sleeping' },
-    { time: '08:30', title: '起床', state: 'sleeping' },
-    { time: '09:30', title: '早餐', state: 'eating' },
-    { time: '11:00', title: '处理事务', state: 'working' },
-    { time: '13:00', title: '午餐', state: 'eating' },
-    { time: '16:00', title: '自由时间', state: 'relaxing' },
-    { time: '19:00', title: '晚餐', state: 'eating' },
-    { time: '21:00', title: '放松', state: 'relaxing' },
-    { time: '23:30', title: '准备睡觉', state: 'sleeping' }
-  ],
-  traveler: [
-    { time: '00:00', title: '正在睡觉', state: 'sleeping' },
-    { time: '07:00', title: '起床', state: 'sleeping' },
-    { time: '08:00', title: '早餐', state: 'eating' },
-    { time: '10:00', title: '街头漫步', state: 'traveling' },
-    { time: '13:00', title: '午餐', state: 'eating' },
-    { time: '16:00', title: '探索远方', state: 'traveling' },
-    { time: '19:00', title: '晚餐', state: 'eating' },
-    { time: '21:00', title: '看风景', state: 'traveling' },
-    { time: '23:00', title: '准备睡觉', state: 'sleeping' }
-  ]
-}
-
-function getTimelineTemplate(role) {
-  return TIMELINE_TEMPLATES[role] || TIMELINE_TEMPLATES.office_worker
-}
-
-function parseTimeToMinutes(timeStr) {
-  const parts = String(timeStr).split(':')
-  const hour = Number(parts[0]) || 0
-  const minute = Number(parts[1]) || 0
-  return hour * 60 + minute
-}
-
-/** 根据当地时间落在一天中的哪个时段，选取时间线条目 */
-function getCurrentTimelineIndex(timeline, localMinutes) {
-  let index = -1
-  for (let i = 0; i < timeline.length; i++) {
-    if (parseTimeToMinutes(timeline[i].time) <= localMinutes) {
-      index = i
-    }
-  }
-  // 理论上首条为 00:00 正在睡觉；兜底仍指向深睡段
-  if (index === -1) {
-    return 0
-  }
-  return index
 }
 
 /** 各角色在当前活动下的 4～5 种心情（按 state 选取，localMinutes 决定当日稳定一项） */
@@ -327,46 +260,6 @@ function pad2(n) {
   return String(n).padStart(2, '0')
 }
 
-function getLocalTimePartsFromTimezone(timezone, date) {
-  const at = date || new Date()
-
-  if (timezone && timezone.timezoneId) {
-    try {
-      const parts = new Intl.DateTimeFormat('en-GB', {
-        timeZone: timezone.timezoneId,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }).formatToParts(at)
-      const hour = Number(parts.find((p) => p.type === 'hour')?.value || 0)
-      const minute = Number(parts.find((p) => p.type === 'minute')?.value || 0)
-      return {
-        hour,
-        minute,
-        localMinutes: hour * 60 + minute
-      }
-    } catch (error) {
-      console.warn('[activityEngine] Intl timezone parts failed:', error)
-    }
-  }
-
-  if (timezone && typeof timezone.rawOffset === 'number') {
-    const offsetSec =
-      typeof timezone.dstOffset === 'number' ? timezone.dstOffset : timezone.rawOffset
-    const utcMs = at.getTime() + at.getTimezoneOffset() * 60000
-    const local = new Date(utcMs + offsetSec * 1000)
-    const hour = local.getUTCHours()
-    const minute = local.getUTCMinutes()
-    return {
-      hour,
-      minute,
-      localMinutes: hour * 60 + minute
-    }
-  }
-
-  return null
-}
-
 function formatLocalTimeFromTimezone(timezone, date) {
   if (!timezone) {
     return { localTime: '--:--', localDateLabel: '当地时间', localMinutes: null }
@@ -423,20 +316,10 @@ function buildResult(selectedAvatar, distanceKm, geoMeta, timezone) {
     currentItem.title
   )
 
-  console.log('[activityEngine] schedule:', {
-    role: selectedAvatar.role,
-    localTime,
-    localMinutes,
-    currentIndex,
-    currentTitle: currentItem.title,
-    currentState,
-    todayMood
-  })
-
   return {
     localTime,
     localDateLabel,
-    dayType: 'weekday',
+    dayType: resolveDayType(timezone, new Date()),
     currentState,
     currentTitle,
     currentDescription,

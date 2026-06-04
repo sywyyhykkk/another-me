@@ -41,20 +41,3 @@ export function formatAntipodeLocalTime(
 
 	return fallback
 }
-
-export function formatAntipodeWeekdayLabel(
-	timezone: GeoTimezoneData | null | undefined,
-	date: Date = new Date()
-): string {
-	if (!timezone?.timezoneId) return '当地时间'
-
-	try {
-		const weekday = new Intl.DateTimeFormat('zh-CN', {
-			timeZone: timezone.timezoneId,
-			weekday: 'long'
-		}).format(date)
-		return `当地时间 · ${weekday}`
-	} catch {
-		return timezone.timezoneId ? `当地时间 · ${timezone.timezoneId}` : '当地时间'
-	}
-}

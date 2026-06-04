@@ -43,7 +43,6 @@ async function ensureCollection(name) {
 
   try {
     await db.createCollection(name)
-    console.log('[virtualProfile] collection created:', name)
   } catch (error) {
     if (await collectionExists(name)) {
       return
@@ -76,10 +75,6 @@ exports.main = async (event, context) => {
         return await getActiveProfile(openid, payload)
       case 'create':
         return await createProfile(openid, payload)
-      case 'list':
-        return await listProfiles(openid)
-      case 'setActive':
-        return await setActiveProfile(openid, payload)
       case 'delete':
         return await deleteProfile(openid, payload)
       default:
@@ -209,44 +204,6 @@ async function createProfile(openid, payload) {
     success: true,
     exists: true,
     data: profile
-  }
-}
-
-async function listProfiles(openid) {
-  const res = await db
-    .collection(PROFILES)
-    .where({ openid })
-    .orderBy('updatedAt', 'desc')
-    .limit(50)
-    .get()
-
-  return {
-    success: true,
-    data: res.data
-  }
-}
-
-async function setActiveProfile(openid, payload) {
-  const profileId = payload && payload.profileId
-  if (!profileId) {
-    return { success: false, message: 'Invalid payload' }
-  }
-
-  const profile = await getProfileById(profileId, openid)
-  if (!profile) {
-    return { success: false, message: 'Profile not found' }
-  }
-
-  await archiveActiveProfiles(openid)
-  await markProfileActive(profileId)
-  await upsertUserSettings(openid, profileId, true)
-
-  const updatedProfile = await getProfileById(profileId, openid)
-  const refreshed = updatedProfile ? await refreshProfileInPlace(updatedProfile) : null
-
-  return {
-    success: true,
-    data: refreshed
   }
 }
 
@@ -438,7 +395,6 @@ async function enrichOriginLocation(originLocation) {
     const result = geoRes.result
     if (result && result.success && result.data) {
       const geoResolved = buildOriginGeoResolved(result.data)
-      console.log('[virtualProfile] origin enriched:', result.data.cityName, result.data.countryName)
       return {
         ...originLocation,
         mode: 'device',
@@ -522,21 +478,6 @@ async function resolveGeoData(originLocation, targetMode) {
 
   const { antipode, targetLocation, distanceKm, geoMeta, nearestPlace, ocean, timezone } =
     geoResult.data
-
-  console.log('[virtualProfile] geoResolver data:', {
-    geoSource: geoMeta && geoMeta.source,
-    cached: geoMeta && geoMeta.cached,
-    geoMetaTimezone: geoMeta && geoMeta.timezone,
-    distanceKm,
-    hasNearestPlace: Boolean(nearestPlace),
-    hasOcean: Boolean(ocean),
-    timezoneData: timezone
-      ? {
-          timezoneId: timezone.timezoneId,
-          countryCode: timezone.countryCode
-        }
-      : null
-  })
 
   return {
     ok: true,
@@ -760,7 +701,6 @@ async function refreshProfileInPlace(profile, options = {}) {
   const forceRefresh = Boolean(options.forceRefresh)
 
   if (!forceRefresh && canSkipProfileRefresh(profile, activitySlotKey)) {
-    console.log('[virtualProfile] refresh skipped, same activity slot:', activitySlotKey)
     if (needsOriginEnrich(profile.originLocation) && originLocation !== profile.originLocation) {
       const patch = {
         originLocation,
@@ -849,14 +789,6 @@ async function refreshProfileInPlace(profile, options = {}) {
 
   try {
     await db.collection(PROFILES).doc(profile._id).update({ data: updateData })
-    console.log('[virtualProfile] profile refreshed:', profile._id, {
-      cityName: originLocation.cityName,
-      activitySlotKey: refreshedSlotKey,
-      hasOriginGeoResolved: Boolean(originLocation.geoResolved),
-      antipode,
-      distanceKm: result.distanceKm,
-      localTime: result.localTime
-    })
   } catch (error) {
     console.warn('[virtualProfile] profile refresh persist failed:', error)
     return profile

@@ -16,9 +16,11 @@
 					aria-label="刷新"
 					@click="handleRefresh"
 				>
-					<view class="btn-refresh__icon" :class="{ 'btn-refresh__icon--spin': isRefreshing }">
-						<view class="btn-refresh__arc btn-refresh__arc--tl" />
-						<view class="btn-refresh__arc btn-refresh__arc--br" />
+					<view
+						class="btn-refresh__icon-wrap"
+						:class="{ 'btn-refresh__icon-wrap--spin': isRefreshing }"
+					>
+						<uni-icons type="refreshempty" :size="20" />
 					</view>
 				</button>
 			</view>
@@ -33,11 +35,6 @@
 			</view>
 		
 		</view>
-
-		<!-- <view class="video-placeholder card">
-			<text class="placeholder-icon">🎬</text>
-			<text class="placeholder-text">{{ videoPlaceholderText }}</text>
-		</view> -->
 
 		<view class="activity card">
 			<text class="activity-text">{{ displayResult.currentTitle }}</text>
@@ -75,10 +72,7 @@
 				aria-label="换一个形象"
 				@click="handleReset"
 			>
-				<view class="btn-icon__swap" aria-hidden="true">
-					<view class="btn-icon__swap-track btn-icon__swap-track--left" />
-					<view class="btn-icon__swap-track btn-icon__swap-track--right" />
-				</view>
+				<uni-icons type="undo" :size="22" :color="APP_COLORS.textMuted" />
 			</button>
 		</view>
 	</view>
@@ -86,9 +80,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { deleteVirtualProfile } from '../../api/virtualProfile'
 import type { VirtualProfile } from '../../types/virtualProfile'
+import { APP_COLORS } from '../../config/theme'
 import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
 import {
 	clearOnboardingFlowCache,
@@ -104,22 +99,50 @@ const isResetting = ref(false)
 const isRefreshing = ref(false)
 
 onLoad(() => {
-	loadProfile(true)
+	loadProfile({ showFullPageLoading: true })
 })
 
-async function loadProfile(showFullPageLoading: boolean) {
+onShow(() => {
+	if (activeProfile.value && !isLoading.value && !isRefreshing.value) {
+		loadProfile({ silent: true })
+	}
+})
+
+async function loadProfile(options: { showFullPageLoading?: boolean; silent?: boolean } = {}) {
+	const { showFullPageLoading = false, silent = false } = options
+
 	if (showFullPageLoading) {
 		isLoading.value = true
 	}
 
-	const profile = await fetchActiveProfileFromCloud()
+	let profile: VirtualProfile | null = null
+	try {
+		profile = await fetchActiveProfileFromCloud()
+	} catch (error) {
+		console.warn('[result] loadProfile failed', error)
+		if (showFullPageLoading || !activeProfile.value) {
+			if (showFullPageLoading) isLoading.value = false
+			redirectToHome()
+			return
+		}
+		if (!silent) {
+			uni.showToast({ title: '更新失败', icon: 'none' })
+		}
+		return
+	}
 
 	if (showFullPageLoading) {
 		isLoading.value = false
 	}
 
 	if (!profile || !profile.result || !profile.targetLocation) {
-		redirectToHome()
+		if (showFullPageLoading || !activeProfile.value) {
+			redirectToHome()
+			return
+		}
+		if (!silent) {
+			uni.showToast({ title: '更新失败', icon: 'none' })
+		}
 		return
 	}
 
@@ -171,22 +194,8 @@ const displayDistance = computed(() => {
 	return formatDistanceKm(displayResult.value.distanceKm)
 })
 
-const videoPlaceholderText = computed(() => {
-	const videoFileId = activeProfile.value?.videoAsset?.videoFileId
-	if (!videoFileId) {
-		return '虚拟形象视频占位'
-	}
-	if (videoFileId.startsWith('cloud://')) {
-		return '虚拟形象视频已就绪'
-	}
-	if (videoFileId.startsWith('placeholder://')) {
-		return `虚拟形象视频占位（${activeProfile.value?.videoAsset?.assetKey || '占位'}）`
-	}
-	return '虚拟形象视频占位'
-})
-
 function goTimeline() {
-	uni.redirectTo({
+	uni.navigateTo({
 		url: '/pages/timeline/index'
 	})
 }
@@ -276,39 +285,11 @@ async function handleReset() {
 	color: $am-secondary;
 }
 
-.top-label {
-	display: block;
-	font-size: 36rpx;
-	font-weight: 600;
-	color: $am-text;
-	margin-bottom: 20rpx;
-}
-
 .meta-row {
 	margin-bottom: 12rpx;
 }
 
 .meta-item {
-	font-size: 28rpx;
-	color: $am-text-muted;
-}
-
-.video-placeholder {
-	height: 360rpx;
-	margin-bottom: 24rpx;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	background: linear-gradient(180deg, #fff 0%, #fff9f0 100%);
-}
-
-.placeholder-icon {
-	font-size: 64rpx;
-	margin-bottom: 16rpx;
-}
-
-.placeholder-text {
 	font-size: 28rpx;
 	color: $am-text-muted;
 }
@@ -414,61 +395,15 @@ async function handleReset() {
 	opacity: 0.5;
 }
 
-.btn-icon__swap {
-	width: 36rpx;
-	height: 32rpx;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	gap: 10rpx;
-}
-
-.btn-icon__swap-track {
-	height: 4rpx;
-	background: $am-text-muted;
-	border-radius: 2rpx;
-	position: relative;
-}
-
-.btn-icon__swap-track--left {
-	width: 26rpx;
-	align-self: flex-start;
-}
-
-.btn-icon__swap-track--left::before {
-	content: '';
-	position: absolute;
-	left: -10rpx;
-	top: 50%;
-	transform: translateY(-50%);
-	border: 6rpx solid transparent;
-	border-right: 8rpx solid $am-text-muted;
-}
-
-.btn-icon__swap-track--right {
-	width: 26rpx;
-	align-self: flex-end;
-}
-
-.btn-icon__swap-track--right::after {
-	content: '';
-	position: absolute;
-	right: -10rpx;
-	top: 50%;
-	transform: translateY(-50%);
-	border: 6rpx solid transparent;
-	border-left: 8rpx solid $am-text-muted;
-}
-
 .btn-refresh {
 	flex-shrink: 0;
 	width: 64rpx;
 	height: 64rpx;
 	padding: 0;
 	margin: 0;
-	border: none !important;
+	border: 2rpx solid $am-border !important;
 	border-radius: 50%;
-	background: rgba(143, 185, 150, 0.12) !important;
+	background: $am-bg !important;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -482,57 +417,15 @@ async function handleReset() {
 	opacity: 0.5;
 }
 
-.btn-refresh__icon {
-	width: 30rpx;
-	height: 30rpx;
-	position: relative;
+.btn-refresh__icon-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
 }
 
-.btn-refresh__arc {
-	position: absolute;
-	width: 14rpx;
-	height: 14rpx;
-	box-sizing: border-box;
-}
-
-.btn-refresh__arc--tl {
-	top: 0;
-	left: 0;
-	border-top: 3rpx solid $am-secondary;
-	border-right: 3rpx solid transparent;
-	border-radius: 0 100% 0 0;
-}
-
-.btn-refresh__arc--tl::after {
-	content: '';
-	position: absolute;
-	top: -2rpx;
-	right: -8rpx;
-	border: 4rpx solid transparent;
-	border-left: 7rpx solid $am-secondary;
-	transform: rotate(-18deg);
-}
-
-.btn-refresh__arc--br {
-	right: 0;
-	bottom: 0;
-	border-bottom: 3rpx solid $am-secondary;
-	border-left: 3rpx solid transparent;
-	border-radius: 0 0 0 100%;
-}
-
-.btn-refresh__arc--br::after {
-	content: '';
-	position: absolute;
-	bottom: -2rpx;
-	left: -8rpx;
-	border: 4rpx solid transparent;
-	border-right: 7rpx solid $am-secondary;
-	transform: rotate(-18deg);
-}
-
-.btn-refresh__icon--spin {
-	animation: refresh-spin 0.85s linear infinite;
+.btn-refresh__icon-wrap--spin {
+	animation: refresh-spin 0.8s linear infinite;
 }
 
 @keyframes refresh-spin {

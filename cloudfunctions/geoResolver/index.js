@@ -63,8 +63,6 @@ async function resolveOrigin(payload) {
     (nearestPlace && nearestPlace.countryName) ||
     '未知国家'
 
-  console.log('[geoResolver] resolveOrigin:', { cityName, countryName, latitude, longitude })
-
   return {
     success: true,
     data: {
@@ -120,11 +118,6 @@ async function resolveTarget(payload) {
 
   const cached = await getGeoCache(cacheId)
   if (cached && isGeoCacheComplete(cached)) {
-    console.log('[geoResolver] cache hit:', cacheId, {
-      hasNearestPlace: Boolean(cached.nearestPlace),
-      hasOcean: Boolean(cached.ocean),
-      timezoneId: cached.timezone && cached.timezone.timezoneId
-    })
     return {
       success: true,
       data: buildResponseData({
@@ -282,36 +275,14 @@ function isGeoCacheComplete(cached) {
 }
 
 async function resolveWithGeoNames(originLocation, antipode, roundedAntipode, username) {
-  console.log('[geoResolver] resolveWithGeoNames start:', {
-    lat: antipode.latitude,
-    lng: antipode.longitude
-  })
-
   const nearestPlace = await fetchNearestPlace(antipode.latitude, antipode.longitude, username)
-  console.log('[geoResolver] fetchNearestPlace result:', nearestPlace
-    ? {
-        name: nearestPlace.name,
-        distanceKm: nearestPlace.distanceKm,
-        countryCode: nearestPlace.countryCode
-      }
-    : null)
 
   let ocean = null
   if (!nearestPlace || nearestPlace.distanceKm > 80) {
     ocean = await fetchOcean(antipode.latitude, antipode.longitude, username)
-    console.log('[geoResolver] fetchOcean result:', ocean)
-  } else {
-    console.log('[geoResolver] fetchOcean skipped (near land within 80km)')
   }
 
   const timezone = await fetchTimezone(antipode, nearestPlace, username)
-  console.log('[geoResolver] fetchTimezone result:', timezone
-    ? {
-        timezoneId: timezone.timezoneId,
-        countryCode: timezone.countryCode,
-        time: timezone.time
-      }
-    : null)
 
   const targetLocation = buildTargetLocation({
     antipode,
@@ -320,10 +291,6 @@ async function resolveWithGeoNames(originLocation, antipode, roundedAntipode, us
     timezone
   })
   const distanceKm = computeDistanceKm(originLocation, antipode, nearestPlace)
-
-  console.log('[geoResolver] distanceKm:', distanceKm, {
-    usedOriginToAntipode: !nearestPlace
-  })
 
   return {
     targetLocation,
@@ -375,7 +342,6 @@ async function ensureGeoCacheCollection() {
 
   try {
     await db.createCollection(GEO_CACHE)
-    console.log('[geoResolver] collection created:', GEO_CACHE)
   } catch (error) {
     if (!(await collectionExists(GEO_CACHE))) {
       console.warn('[geoResolver] ensure geo_cache collection failed:', error)
@@ -397,33 +363,65 @@ async function getGeoCache(cacheId) {
   }
 }
 
-async function saveGeoCache(cacheId, antipode, roundedAntipode, geoData) {
-  const data = {
-    cacheKey: cacheId,
-    antipode,
-    roundedAntipode,
-    targetLocation: geoData.targetLocation,
-    nearestPlace: geoData.nearestPlace || null,
-    ocean: geoData.ocean || null,
-    timezone: geoData.timezone || null,
-    distanceKm: geoData.distanceKm || 0,
-    source: 'geonames',
-    resolverVersion: 1,
-    updatedAt: db.serverDate()
+function normalizeOceanForCache(ocean) {
+  if (!ocean || typeof ocean.name !== 'string' || !ocean.name) {
+    return null
+  }
+  return { name: ocean.name }
+}
+
+function normalizeNearestPlaceForCache(nearestPlace) {
+  if (!nearestPlace || typeof nearestPlace.name !== 'string') {
+    return null
   }
 
+  return {
+    geonameId: nearestPlace.geonameId,
+    name: nearestPlace.name,
+    countryName: nearestPlace.countryName,
+    countryCode: nearestPlace.countryCode,
+    adminName1: nearestPlace.adminName1,
+    lat: nearestPlace.lat,
+    lng: nearestPlace.lng,
+    distanceKm: nearestPlace.distanceKm
+  }
+}
+
+function normalizeTimezoneForCache(timezone) {
+  if (!timezone || !timezone.timezoneId) {
+    return null
+  }
+
+  return {
+    timezoneId: timezone.timezoneId,
+    time: timezone.time,
+    countryCode: timezone.countryCode,
+    countryName: timezone.countryName,
+    rawOffset: timezone.rawOffset,
+    dstOffset: timezone.dstOffset
+  }
+}
+
+async function saveGeoCache(cacheId, antipode, roundedAntipode, geoData) {
   try {
     const existing = await getGeoCache(cacheId)
-    if (existing) {
-      await db.collection(GEO_CACHE).doc(cacheId).update({ data })
-    } else {
-      await db.collection(GEO_CACHE).doc(cacheId).set({
-        data: {
-          ...data,
-          createdAt: db.serverDate()
-        }
-      })
+    const payload = {
+      cacheKey: cacheId,
+      antipode,
+      roundedAntipode,
+      targetLocation: geoData.targetLocation,
+      nearestPlace: normalizeNearestPlaceForCache(geoData.nearestPlace),
+      ocean: normalizeOceanForCache(geoData.ocean),
+      timezone: normalizeTimezoneForCache(geoData.timezone),
+      distanceKm: geoData.distanceKm || 0,
+      source: 'geonames',
+      resolverVersion: 1,
+      createdAt: existing && existing.createdAt ? existing.createdAt : db.serverDate(),
+      updatedAt: db.serverDate()
     }
+
+    // 用 set 整文档覆盖：update 在 ocean/nearestPlace 曾为 null 时无法写入子字段
+    await db.collection(GEO_CACHE).doc(cacheId).set({ data: payload })
   } catch (error) {
     console.warn('[geoResolver] save cache failed:', error)
   }
@@ -503,7 +501,6 @@ async function fetchNearestPlace(lat, lng, username) {
     `&username=${encodeURIComponent(username)}`
 
   try {
-    console.log('[geoResolver] fetchNearestPlace url:', url)
     const data = await httpsGetJson(url)
     if (data.status) {
       console.warn('[geoResolver] findNearbyPlaceName status:', data.status)
@@ -539,7 +536,6 @@ async function fetchOcean(lat, lng, username) {
     `&username=${encodeURIComponent(username)}`
 
   try {
-    console.log('[geoResolver] fetchOcean url:', url)
     const data = await httpsGetJson(url)
     if (data.status) {
       console.warn('[geoResolver] oceanJSON status:', data.status)
@@ -570,7 +566,6 @@ async function fetchTimezone(antipode, nearestPlace, username) {
     `&username=${encodeURIComponent(username)}`
 
   try {
-    console.log('[geoResolver] fetchTimezone url:', url)
     const data = await httpsGetJson(url)
     if (data.status) {
       console.warn('[geoResolver] timezoneJSON status:', data.status)

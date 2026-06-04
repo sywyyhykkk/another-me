@@ -49,15 +49,9 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getActiveVirtualProfile } from '../../api/virtualProfile'
+import { showCloudUnavailableHint } from '../../utils/cloudUnavailableHint'
+import type { StoredUserLocation } from '../../types/virtualProfile'
 import { STORAGE_KEYS } from '../../utils/profileStorage'
-
-interface UserLocation {
-	source: 'device'
-	latitude: number
-	longitude: number
-	accuracy?: number
-	createdAt: number
-}
 
 const isLocating = ref(false)
 const isCheckingProfile = ref(true)
@@ -73,12 +67,13 @@ onLoad(async () => {
 		}
 	} catch (error) {
 		console.warn('[index] getActiveVirtualProfile failed', error)
+		showCloudUnavailableHint()
 	} finally {
 		isCheckingProfile.value = false
 	}
 })
 
-function saveUserLocation(location: UserLocation) {
+function saveUserLocation(location: StoredUserLocation) {
 	uni.setStorageSync(STORAGE_KEYS.userLocation, location)
 	uni.setStorageSync(STORAGE_KEYS.locationMode, 'device')
 }
@@ -114,7 +109,6 @@ function handleStart() {
 		},
 		fail: (err) => {
 			console.warn('getLocation failed', err.errMsg || err)
-			isLocating.value = false
 
 			uni.showModal({
 				title: '无法获取位置',
@@ -128,6 +122,9 @@ function handleStart() {
 					}
 				}
 			})
+		},
+		complete: () => {
+			isLocating.value = false
 		}
 	})
 }

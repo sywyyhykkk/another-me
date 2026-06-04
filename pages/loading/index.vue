@@ -24,6 +24,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { createVirtualProfile } from '../../api/virtualProfile'
 import { LOADING_STEPS } from '../../utils/loadingSteps'
+import { getCreateProfileErrorMessage } from '../../utils/createProfileError'
 import { buildCreateProfilePayload } from '../../utils/profileBuilder'
 
 const steps = LOADING_STEPS
@@ -31,7 +32,15 @@ const activeStep = ref(-1)
 const isCreating = ref(false)
 
 let stepTimer: ReturnType<typeof setInterval> | null = null
+let redirectTimer: ReturnType<typeof setTimeout> | null = null
 let startedAt = 0
+
+function clearStepTimer() {
+	if (stepTimer) {
+		clearInterval(stepTimer)
+		stepTimer = null
+	}
+}
 
 onMounted(async () => {
 	if (isCreating.value) return
@@ -56,21 +65,27 @@ onMounted(async () => {
 			throw new Error(res.message || 'create profile failed')
 		}
 
+		clearStepTimer()
+		activeStep.value = steps.length - 1
+
 		const elapsed = Date.now() - startedAt
 		const remain = Math.max(0, 1500 - elapsed)
 
-		setTimeout(() => {
+		redirectTimer = setTimeout(() => {
 			uni.redirectTo({
 				url: '/pages/result/index'
 			})
 		}, remain)
 	} catch (error) {
 		console.error('[loading] createVirtualProfile failed', error)
+		clearStepTimer()
 		isCreating.value = false
+
+		const serverMessage = error instanceof Error ? error.message : undefined
 
 		uni.showModal({
 			title: '生成失败',
-			content: '暂时无法生成你的另一个我，请稍后再试。',
+			content: getCreateProfileErrorMessage(error, serverMessage),
 			showCancel: false,
 			success: () => {
 				uni.navigateBack({
@@ -86,7 +101,11 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-	if (stepTimer) clearInterval(stepTimer)
+	clearStepTimer()
+	if (redirectTimer) {
+		clearTimeout(redirectTimer)
+		redirectTimer = null
+	}
 })
 </script>
 

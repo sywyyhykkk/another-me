@@ -49,6 +49,7 @@ export function clearOnboardingFlowCache() {
 	uni.removeStorageSync(STORAGE_KEYS.selectedCity)
 	uni.removeStorageSync(STORAGE_KEYS.userLocation)
 	uni.removeStorageSync(STORAGE_KEYS.locationMode)
+	uni.removeStorageSync('another_me_session')
 }
 
 export function getCachedUserLocation(): StoredUserLocation | null {

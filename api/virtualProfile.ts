@@ -20,19 +20,6 @@ export function createVirtualProfile(payload: CreateVirtualProfilePayload) {
 	})
 }
 
-export function listVirtualProfiles() {
-	return callCloudFunction<CloudResponse<VirtualProfile[]>>('virtualProfile', {
-		action: 'list'
-	})
-}
-
-export function setActiveVirtualProfile(profileId: string) {
-	return callCloudFunction<CloudResponse<VirtualProfile>>('virtualProfile', {
-		action: 'setActive',
-		payload: { profileId }
-	})
-}
-
 export function deleteVirtualProfile(payload: DeleteVirtualProfilePayload) {
 	return callCloudFunction<CloudResponse<null>>('virtualProfile', {
 		action: 'delete',

@@ -1,7 +1,6 @@
 import type { CreateVirtualProfilePayload, OriginLocation, SelectedAvatar } from '../types/virtualProfile'
 import { resolveOriginLocation } from '../api/geoResolver'
 import {
-	CITY_PRESETS,
 	DEFAULT_CITY_PRESET,
 	DEFAULT_SELECTED_AVATAR,
 	getCityPreset,
@@ -13,7 +12,6 @@ import {
 	getCachedSelectedCity,
 	getCachedUserLocation
 } from './profileStorage'
-import { getSession } from './session'
 
 export async function buildCreateProfilePayload(): Promise<CreateVirtualProfilePayload> {
 	const originLocation = await buildOriginLocation()
@@ -31,7 +29,6 @@ export async function buildOriginLocation(): Promise<OriginLocation> {
 	const locationMode = getCachedLocationMode()
 	const selectedCity = getCachedSelectedCity()
 	const userLocation = getCachedUserLocation()
-	const session = getSession()
 
 	if (locationMode === 'manual' && selectedCity) {
 		return {
@@ -40,17 +37,6 @@ export async function buildOriginLocation(): Promise<OriginLocation> {
 			countryName: selectedCity.country || '中国',
 			latitude: selectedCity.latitude,
 			longitude: selectedCity.longitude
-		}
-	}
-
-	if (locationMode === 'manual' && session.selectedCity) {
-		const preset = getCityPreset(session.selectedCity)
-		return {
-			mode: 'manual',
-			cityName: preset.name,
-			countryName: preset.country,
-			latitude: preset.latitude,
-			longitude: preset.longitude
 		}
 	}
 
@@ -74,9 +60,7 @@ export async function buildOriginLocation(): Promise<OriginLocation> {
 	}
 }
 
-export async function enrichDeviceOriginLocation(
-	originLocation: OriginLocation
-): Promise<OriginLocation> {
+async function enrichDeviceOriginLocation(originLocation: OriginLocation): Promise<OriginLocation> {
 	if (originLocation.mode !== 'device' && originLocation.cityName !== '当前位置') {
 		return originLocation
 	}
@@ -108,16 +92,5 @@ export function buildSelectedAvatar(): SelectedAvatar {
 		return toSelectedAvatar(cachedAvatar)
 	}
 
-	const session = getSession()
-	if (session.selectedAvatar) {
-		return toSelectedAvatar({
-			id: session.selectedAvatar.id,
-			name: session.selectedAvatar.name,
-			description: session.selectedAvatar.description
-		})
-	}
-
 	return DEFAULT_SELECTED_AVATAR
 }
-
-export { CITY_PRESETS }

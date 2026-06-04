@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import type { VirtualProfile } from '../../types/virtualProfile'
 import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
 import {
@@ -53,18 +53,56 @@ import {
 const activeProfile = ref<VirtualProfile | null>(null)
 const isLoading = ref(true)
 
-onLoad(async () => {
-	isLoading.value = true
-	const profile = await fetchActiveProfileFromCloud()
-	isLoading.value = false
+onLoad(() => {
+	loadProfile({ showFullPageLoading: true })
+})
+
+onShow(() => {
+	if (activeProfile.value && !isLoading.value) {
+		loadProfile({ silent: true })
+	}
+})
+
+async function loadProfile(options: { showFullPageLoading?: boolean; silent?: boolean } = {}) {
+	const { showFullPageLoading = false, silent = false } = options
+
+	if (showFullPageLoading) {
+		isLoading.value = true
+	}
+
+	let profile: VirtualProfile | null = null
+	try {
+		profile = await fetchActiveProfileFromCloud()
+	} catch (error) {
+		console.warn('[timeline] loadProfile failed', error)
+		if (showFullPageLoading || !activeProfile.value) {
+			if (showFullPageLoading) isLoading.value = false
+			redirectToHome()
+			return
+		}
+		if (!silent) {
+			uni.showToast({ title: '更新失败', icon: 'none' })
+		}
+		return
+	}
+
+	if (showFullPageLoading) {
+		isLoading.value = false
+	}
 
 	if (!profile || !profile.result) {
-		redirectToHome()
+		if (showFullPageLoading || !activeProfile.value) {
+			redirectToHome()
+			return
+		}
+		if (!silent) {
+			uni.showToast({ title: '更新失败', icon: 'none' })
+		}
 		return
 	}
 
 	activeProfile.value = profile
-})
+}
 
 const displayResult = computed(() => activeProfile.value!.result)
 

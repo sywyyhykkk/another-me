@@ -1,11 +1,18 @@
 import type { Avatar } from '../types/index'
 
+export const AVATAR_EMOJI: Record<string, string> = {
+	office: '💼',
+	student: '📚',
+	free: '☕',
+	traveler: '🎒'
+}
+
 export const AVATARS: Avatar[] = [
 	{
 		id: 'office',
 		name: '都市上班族',
 		description: '认真工作，也可能正在摸鱼。',
-		avatarColor: '#E6A85C'
+		avatarColor: '#6E8EAD'
 	},
 	{
 		id: 'student',
@@ -17,12 +24,16 @@ export const AVATARS: Avatar[] = [
 		id: 'free',
 		name: '自由生活者',
 		description: '时间比较松，但不代表真的自由。',
-		avatarColor: '#D4A574'
+		avatarColor: '#B8A0C8'
 	},
 	{
 		id: 'traveler',
 		name: '旅行者',
 		description: '更容易出现在街头、海边和远方。',
-		avatarColor: '#C9A882'
+		avatarColor: '#E0886B'
 	}
 ]
+
+export function getAvatarEmoji(id: string) {
+	return AVATAR_EMOJI[id] || '🙂'
+}

@@ -5,6 +5,8 @@
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SOURCE="$ROOT/cloudfunctions"
 
+node "$ROOT/scripts/sync-cloud-assets.js"
+
 if [ ! -d "$SOURCE" ]; then
   echo "[error] 未找到 cloudfunctions: $SOURCE"
   exit 1
