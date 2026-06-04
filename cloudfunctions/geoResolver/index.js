@@ -266,14 +266,15 @@ function haversineDistanceKm(lat1, lng1, lat2, lng2) {
 }
 
 function computeDistanceKm(originLocation, antipode, nearestPlace) {
-  if (nearestPlace) {
-    return nearestPlace.distanceKm
-  }
+  const targetLat =
+    nearestPlace && typeof nearestPlace.lat === 'number' ? nearestPlace.lat : antipode.latitude
+  const targetLng =
+    nearestPlace && typeof nearestPlace.lng === 'number' ? nearestPlace.lng : antipode.longitude
   return haversineDistanceKm(
     originLocation.latitude,
     originLocation.longitude,
-    antipode.latitude,
-    antipode.longitude
+    targetLat,
+    targetLng
   )
 }
 

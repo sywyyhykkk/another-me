@@ -16,7 +16,7 @@ const db = cloud.database()
 
 const PROFILES = 'virtual_profiles'
 const SETTINGS = 'user_settings'
-const PROFILE_SYNC_VERSION = 7
+const PROFILE_SYNC_VERSION = 8
 
 let collectionsReady = false
 
@@ -435,6 +435,44 @@ function computeAntipodeFromOrigin(originLocation) {
   }
 }
 
+function haversineDistanceKm(lat1, lng1, lat2, lng2) {
+  const earthRadiusKm = 6371
+  const toRad = (deg) => (deg * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return Math.round(earthRadiusKm * c)
+}
+
+function resolveDistanceKm(originLocation, geo) {
+  if (!originLocation || typeof originLocation.latitude !== 'number') {
+    return typeof geo.distanceKm === 'number' ? geo.distanceKm : 0
+  }
+
+  const np = geo.nearestPlace
+  const targetLat =
+    np && typeof np.lat === 'number'
+      ? np.lat
+      : geo.antipode && typeof geo.antipode.latitude === 'number'
+        ? geo.antipode.latitude
+        : null
+  const targetLng =
+    np && typeof np.lng === 'number'
+      ? np.lng
+      : geo.antipode && typeof geo.antipode.longitude === 'number'
+        ? geo.antipode.longitude
+        : null
+
+  if (targetLat === null || targetLng === null) {
+    return typeof geo.distanceKm === 'number' ? geo.distanceKm : 0
+  }
+
+  return haversineDistanceKm(originLocation.latitude, originLocation.longitude, targetLat, targetLng)
+}
+
 function normalizeAntipode(antipode, originLocation) {
   if (antipode && typeof antipode.latitude === 'number' && typeof antipode.longitude === 'number') {
     return {
@@ -522,10 +560,11 @@ function readStoredGeo(profile) {
 function buildResultFromGeo(originLocation, selectedAvatar, geo, existingVideoAsset) {
   const antipode = geo.antipode
   const timezone = geo.timezone
+  const distanceKm = resolveDistanceKm(originLocation, geo)
 
   const result = buildActivityResult({
     selectedAvatar,
-    distanceKm: geo.distanceKm,
+    distanceKm,
     geoMeta: geo.geoMeta,
     timezone,
     antipode
