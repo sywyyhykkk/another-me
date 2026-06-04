@@ -62,12 +62,12 @@
 			</view>
 
 			<view v-if="displaySunrise" class="info-row">
-				<text class="info-label">当地日出</text>
+				<text class="info-label">日出时间</text>
 				<text class="info-value">{{ displaySunrise }}</text>
 			</view>
 
 			<view v-if="displaySunset" class="info-row">
-				<text class="info-label">当地日落</text>
+				<text class="info-label">日落时间</text>
 				<text class="info-value">{{ displaySunset }}</text>
 			</view>
 

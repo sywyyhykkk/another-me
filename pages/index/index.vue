@@ -6,7 +6,7 @@
 		</view>
 
 		<view v-if="isCheckingProfile" class="checking card">
-			<text class="checking-text">正在确认你的另一个我...</text>
+			<text class="checking-text">正在寻找你的另一个我...</text>
 		</view>
 
 		<template v-else>
