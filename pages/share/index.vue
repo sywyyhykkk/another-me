@@ -167,7 +167,7 @@ function buildSharePayloadFromProfile(profile: VirtualProfile) {
 	const activity = profile.result.currentTitle.replace(/^另一个你正在/, '')
 
 	return {
-		title: `我在${originCity}，另一个我在${otherPlace}（当地 ${localTime}）正在${activity}`,
+		title: `我在${originCity}，另一个我在${otherPlace}（正在${activity}`,
 		path: '/pages/index/index'
 	}
 }
