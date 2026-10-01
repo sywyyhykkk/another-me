@@ -103,7 +103,7 @@ import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
 import { resolveLiveActivityDisplay } from '../../utils/liveActivity'
 import {
 	clearOnboardingFlowCache,
-	fetchActiveProfileFromCloud,
+	fetchActiveProfile,
 	formatCoordinates,
 	formatDistanceKm,
 	redirectToHome
@@ -133,7 +133,7 @@ async function loadProfile(options: { showFullPageLoading?: boolean; silent?: bo
 
 	let profile: VirtualProfile | null = null
 	try {
-		profile = await fetchActiveProfileFromCloud()
+		profile = await fetchActiveProfile()
 	} catch (error) {
 		console.warn('[result] loadProfile failed', error)
 		if (showFullPageLoading || !activeProfile.value) {
@@ -170,7 +170,7 @@ async function handleRefresh() {
 	isRefreshing.value = true
 
 	try {
-		const profile = await fetchActiveProfileFromCloud({ forceRefresh: true })
+		const profile = await fetchActiveProfile({ forceRefresh: true })
 		if (!profile || !profile.result || !profile.targetLocation) {
 			redirectToHome()
 			return
@@ -262,13 +262,15 @@ async function handleReset() {
 	isResetting.value = true
 
 	try {
-		await deleteVirtualProfile({ deleteActive: true })
+		const res = await deleteVirtualProfile({ deleteActive: true })
+		if (!res.success) throw new Error(res.message || '删除失败')
+		clearOnboardingFlowCache()
+		redirectToHome()
 	} catch (error) {
 		console.warn('[result] deleteVirtualProfile failed', error)
+		uni.showToast({ title: '重置失败，请重试', icon: 'none' })
 	} finally {
-		clearOnboardingFlowCache()
 		isResetting.value = false
-		redirectToHome()
 	}
 }
 </script>

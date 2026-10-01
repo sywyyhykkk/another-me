@@ -1,28 +1,21 @@
 import type {
-	CloudResponse,
+	ApiResponse,
 	CreateVirtualProfilePayload,
 	DeleteVirtualProfilePayload,
 	VirtualProfile
 } from '../types/virtualProfile'
-import { callCloudFunction } from '../utils/wechatCloud'
+import { requestApi } from '../utils/request'
 
 export function getActiveVirtualProfile(options?: { forceRefresh?: boolean }) {
-	return callCloudFunction<CloudResponse<VirtualProfile | null>>('virtualProfile', {
-		action: 'getActive',
-		...(options?.forceRefresh ? { payload: { forceRefresh: true } } : {})
-	})
+	return requestApi<ApiResponse<VirtualProfile | null>>(
+		`/profiles/active${options?.forceRefresh ? '?forceRefresh=true' : ''}`
+	)
 }
 
 export function createVirtualProfile(payload: CreateVirtualProfilePayload) {
-	return callCloudFunction<CloudResponse<VirtualProfile>>('virtualProfile', {
-		action: 'create',
-		payload
-	})
+	return requestApi<ApiResponse<VirtualProfile>>('/profiles', 'POST', payload)
 }
 
 export function deleteVirtualProfile(payload: DeleteVirtualProfilePayload) {
-	return callCloudFunction<CloudResponse<null>>('virtualProfile', {
-		action: 'delete',
-		payload
-	})
+	return requestApi<ApiResponse<null>>('/profiles', 'DELETE', payload)
 }

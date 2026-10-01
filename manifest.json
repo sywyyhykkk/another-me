@@ -62,8 +62,7 @@
                 "desc" : "你的模糊位置将用于计算地球另一端的位置，不会展示精确地址"
             }
         },
-        "requiredPrivateInfos" : [ "getFuzzyLocation" ],
-        "cloudfunctionRoot" : "cloudfunctions/"
+        "requiredPrivateInfos" : [ "getFuzzyLocation" ]
     },
     "mp-alipay" : {
         "usingComponents" : true

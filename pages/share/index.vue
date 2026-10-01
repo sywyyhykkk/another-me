@@ -56,7 +56,7 @@ import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import type { VirtualProfile } from '../../types/virtualProfile'
 import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
-import { fetchActiveProfileFromCloud, redirectToHome } from '../../utils/profileStorage'
+import { fetchActiveProfile, redirectToHome } from '../../utils/profileStorage'
 import { updateSharePagePayload } from '../../utils/sharePagePayload'
 
 const activeProfile = ref<VirtualProfile | null>(null)
@@ -85,7 +85,7 @@ async function loadProfile(options: {
 
 	let profile: VirtualProfile | null = null
 	try {
-		profile = await fetchActiveProfileFromCloud()
+		profile = await fetchActiveProfile()
 	} catch (error) {
 		console.warn('[share] loadProfile failed', error)
 		if (showFullPageLoading || !activeProfile.value) {

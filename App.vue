@@ -1,10 +1,5 @@
-<script setup lang="ts">
-import { onLaunch } from '@dcloudio/uni-app'
-import { initWechatCloud } from './utils/wechatCloud'
-
-onLaunch(() => {
-	initWechatCloud()
-})
+<script lang="ts">
+export default {}
 </script>
 
 <style lang="scss">

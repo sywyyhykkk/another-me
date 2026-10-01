@@ -10,5 +10,5 @@
     "types": ["@dcloudio/types"]
   },
   "include": ["**/*.ts", "**/*.d.ts", "**/*.vue"],
-  "exclude": ["node_modules", "unpackage", "dist", "cloudfunctions"]
+  "exclude": ["node_modules", "unpackage", "dist"]
 }

@@ -1,4 +1,4 @@
-import { callCloudFunction } from '../utils/wechatCloud'
+import { requestApi } from '../utils/request'
 
 export interface ResolveOriginNearestPlace {
 	geonameId?: number
@@ -29,8 +29,5 @@ export interface ResolveOriginResponse {
 }
 
 export function resolveOriginLocation(latitude: number, longitude: number) {
-	return callCloudFunction<ResolveOriginResponse>('geoResolver', {
-		action: 'resolveOrigin',
-		payload: { latitude, longitude }
-	})
+	return requestApi<ResolveOriginResponse>('/geo/origin', 'POST', { latitude, longitude })
 }

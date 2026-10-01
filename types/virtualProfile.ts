@@ -62,7 +62,7 @@ export interface VideoAsset {
 	videoFileId: string
 	posterFileId: string
 	assetKey: string
-	assetSource: 'placeholder_v1' | 'cloud_storage'
+	assetSource: 'placeholder_v1'
 	durationSeconds: number
 }
 
@@ -110,10 +110,9 @@ export interface VirtualProfile {
 	videoAsset?: VideoAsset | null
 	metadata: {
 		version: number
-		syncVersion?: number
 		activitySlotKey?: string
 		lastRefreshedAt?: string | Date
-		generator: 'real_v1' | 'future' | 'cloud_split_v1'
+		generator: 'nestjs_v1'
 		timezoneId?: string
 		countryCode?: string
 		videoAssetGroupId?: string
@@ -128,7 +127,7 @@ export interface VirtualProfile {
 	updatedAt?: string | Date
 }
 
-export interface CloudResponse<T> {
+export interface ApiResponse<T> {
 	success: boolean
 	exists?: boolean
 	data?: T

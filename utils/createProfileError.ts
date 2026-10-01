@@ -15,15 +15,13 @@ export function getCreateProfileErrorMessage(
 	const lower = msg.toLowerCase()
 
 	if (msg.includes('GEONAMES') || msg.includes('Missing GEONAMES')) {
-		return '地理服务暂未就绪，请稍后重试，或改用手动选择城市。'
+		return '地理服务暂时不可用，请稍后重试。'
 	}
-	if (msg.includes('云开发') || msg.includes('callFunction')) {
-		return '无法连接云服务，请检查网络后重试。'
+	if (msg.includes('登录')) {
+		return msg
 	}
 	if (
 		lower.includes('timeout') ||
-		lower.includes('time_limit') ||
-		lower.includes('504003') ||
 		msg.includes('请求超时') ||
 		msg.includes('timed out')
 	) {

@@ -45,7 +45,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import type { VirtualProfile } from '../../types/virtualProfile'
 import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
 import {
-	fetchActiveProfileFromCloud,
+	fetchActiveProfile,
 	getCurrentTimelineLabel,
 	redirectToHome
 } from '../../utils/profileStorage'
@@ -72,7 +72,7 @@ async function loadProfile(options: { showFullPageLoading?: boolean; silent?: bo
 
 	let profile: VirtualProfile | null = null
 	try {
-		profile = await fetchActiveProfileFromCloud()
+		profile = await fetchActiveProfile()
 	} catch (error) {
 		console.warn('[timeline] loadProfile failed', error)
 		if (showFullPageLoading || !activeProfile.value) {

@@ -13,21 +13,14 @@ export const STORAGE_KEYS = {
 	selectedAvatar: 'otherMe:selectedAvatar'
 } as const
 
-export async function fetchActiveProfileFromCloud(options?: {
+export async function fetchActiveProfile(options?: {
 	forceRefresh?: boolean
 }): Promise<VirtualProfile | null> {
-	try {
-		const res = await getActiveVirtualProfile(
-			options?.forceRefresh ? { forceRefresh: true } : undefined
-		)
-		if (res.success && res.exists && res.data) {
-			return res.data
-		}
-	} catch (error) {
-		console.warn('[profileStorage] fetchActiveProfileFromCloud failed', error)
-	}
-
-	return null
+	const res = await getActiveVirtualProfile(
+		options?.forceRefresh ? { forceRefresh: true } : undefined
+	)
+	if (!res.success) throw new Error(res.message || '获取档案失败')
+	return res.exists && res.data ? res.data : null
 }
 
 export function redirectToHome() {

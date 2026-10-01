@@ -49,7 +49,7 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getActiveVirtualProfile } from '../../api/virtualProfile'
-import { showCloudUnavailableHint } from '../../utils/cloudUnavailableHint'
+import { showServiceUnavailableHint } from '../../utils/serviceUnavailableHint'
 import type { StoredUserLocation } from '../../types/virtualProfile'
 import { STORAGE_KEYS } from '../../utils/profileStorage'
 
@@ -74,7 +74,7 @@ onLoad(async () => {
 		}
 	} catch (error) {
 		console.warn('[index] getActiveVirtualProfile failed', error)
-		showCloudUnavailableHint()
+		showServiceUnavailableHint()
 	} finally {
 		isCheckingProfile.value = false
 	}
