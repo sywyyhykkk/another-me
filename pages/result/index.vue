@@ -16,7 +16,7 @@
       <text class="connection">{{ moment.connectionText }}</text>
       <view class="card story"><text class="eyebrow">今天的小事 · 虚拟生活</text><text class="story-title">{{ moment.dailyStory.title }}</text><text class="description">{{ moment.dailyStory.text }}</text><view class="next"><text class="eyebrow">接下来 · {{ moment.nextActivity.time }}</text><text class="next-title">{{ moment.nextActivity.title }}</text></view></view>
       <view class="actions"><button class="btn primary" @click="goShare">分享这一刻</button><button class="btn secondary" @click="goTimeline">查看今天的日程</button></view>
-      <button class="detail-toggle" @click="details = !details">{{ details ? '收起地点详情 −' : '展开地点详情 +' }}</button>
+      <button class="detail-toggle" @click="details = !details">{{ details ? '收起地点详情' : '展开地点详情' }}</button>
       <view v-if="details" class="card details">
         <view class="detail-row"><text>真实对跖点</text><text>{{ coords }}</text></view>
         <view class="detail-row"><text>{{ profile.targetLocation.kind === 'ocean' ? '海域' : '国家 / 区域' }}</text><text>{{ profile.targetLocation.oceanName || [profile.targetLocation.countryName,profile.targetLocation.regionName].filter(Boolean).join(' · ') || '地球另一端' }}</text></view>
@@ -24,7 +24,6 @@
         <view class="detail-row"><text>与你相隔</text><text>{{ distance }}</text></view>
         <view v-if="sunrise" class="detail-row"><text>今天日出</text><text>{{ sunrise }}</text></view>
         <view v-if="sunset" class="detail-row"><text>今天日落</text><text>{{ sunset }}</text></view>
-        <text class="scene-note">地理数据：GeoNames</text>
       </view>
       <button class="reset" :disabled="resetting" @click="handleReset">换一个形象</button>
       <text v-if="error" class="error">{{ error }}</text>
