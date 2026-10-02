@@ -1,8 +1,10 @@
 import type { ShareSnapshot } from '../types/virtualProfile'
 import { weatherVisual, weatherTemperature } from './weather'
+import { displayCharacterName, normalizeSnapshot } from './snapshotDisplay'
 
 // 海报和卡片严格取自同一快照，绘制时不再读取时钟或私人档案。
 export function drawPoster(ctx: UniApp.CanvasContext, snapshot: ShareSnapshot, images: Record<string, string> = {}) {
+  snapshot=normalizeSnapshot(snapshot)
   const width=600, height=920
   ctx.setFillStyle('#fff7ea'); ctx.fillRect(0,0,width,height)
   ctx.setFillStyle('#74553d'); ctx.setFontSize(30); ctx.fillText('对面的我',36,56)
@@ -33,8 +35,8 @@ export function drawPoster(ctx: UniApp.CanvasContext, snapshot: ShareSnapshot, i
     ctx.setFontSize(12);lines(world.timeLabel,x+16,324,228,12,14,1)
   }
   ctx.setFillStyle('#fffdf8');ctx.fillRect(36,362,528,350)
-  ctx.setFillStyle('#8c735d');ctx.setFontSize(18);ctx.fillText(snapshot.avatar.name+' · 此刻',58,395)
-  ctx.setFillStyle('#483d35');let y=lines('它正在'+snapshot.currentTitle,58,433,478,27,34,2)
+  ctx.setFillStyle('#8c735d');ctx.setFontSize(18);ctx.fillText(displayCharacterName(snapshot)+' · '+snapshot.avatar.name,58,395)
+  ctx.setFillStyle('#483d35');let y=lines('正在'+snapshot.currentTitle,58,433,478,27,34,2)
   // 简洁场景插画：海面、舷窗、船舱书桌和角色活动道具。
   ctx.setFillStyle(snapshot.scene.isDay?'#e9d8be':'#66616a');ctx.fillRect(58,y+10,484,120)
   ctx.setFillStyle(snapshot.scene.isDay?'#d6e5de':'#283a52');ctx.fillRect(76,y+24,114,70)
@@ -55,6 +57,7 @@ export function drawPoster(ctx: UniApp.CanvasContext, snapshot: ShareSnapshot, i
 }
 
 export function drawShareCard(ctx:UniApp.CanvasContext,snapshot:ShareSnapshot,images:Record<string,string>={}){
+  snapshot=normalizeSnapshot(snapshot)
   ctx.setFillStyle('#fff7ea');ctx.fillRect(0,0,600,480)
   for(const [i,w] of [snapshot.originWorld,snapshot.targetWorld].entries()){
     const x=20+i*290
@@ -71,8 +74,8 @@ export function drawShareCard(ctx:UniApp.CanvasContext,snapshot:ShareSnapshot,im
     ctx.setFontSize(16);ctx.fillText(w.dayNight+(w.estimated?' · 估算':''),x+16,230)
     if(w.weather){ctx.setFontSize(14);ctx.fillText(w.weather.text,x+124,230)}
   }
-  ctx.setFillStyle('#74553d');ctx.setFontSize(18);ctx.fillText(snapshot.avatar.name+' · '+snapshot.scene.title,28,292)
-  ctx.setFillStyle('#483d35');ctx.setFontSize(27);ctx.fillText('它正在'+snapshot.currentTitle,28,336)
+  ctx.setFillStyle('#74553d');ctx.setFontSize(18);ctx.fillText(displayCharacterName(snapshot)+' · '+snapshot.avatar.name+' · '+snapshot.scene.title,28,292)
+  ctx.setFillStyle('#483d35');ctx.setFontSize(27);ctx.fillText('正在'+snapshot.currentTitle,28,336)
   ctx.setFillStyle(snapshot.scene.isDay?'#d4e4df':'#40546b');ctx.fillRect(28,357,544,84)
   if(snapshot.scene.habitat==='boat_cabin'){ctx.setFillStyle('#789da5');ctx.fillRect(28,404,544,37)}
   ctx.setFillStyle(snapshot.scene.isDay?'#74553d':'#fff4df');ctx.setFontSize(22)

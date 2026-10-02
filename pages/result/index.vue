@@ -7,7 +7,7 @@
       <WorldPair :origin="moment.originWorld" :target="moment.targetWorld" />
       <view class="activity card">
         <text class="eyebrow">{{ profile.selectedAvatar.name }} · 现在</text>
-        <text class="activity-title">它正在{{ moment.currentTitle }}</text>
+        <text class="activity-title">{{ characterName }}正在{{ moment.currentTitle }}</text>
         <text class="mood">{{ moment.todayMood }}</text>
         <LifeScene :scene="moment.scene" :state="moment.currentState" :emoji="profile.selectedAvatar.emoji" />
         <text class="description">{{ moment.currentDescription }}</text>
@@ -35,9 +35,11 @@ import { computed, ref } from 'vue'
 import WorldPair from '../../components/WorldPair.vue'
 import LifeScene from '../../components/LifeScene.vue'
 import { useLiveProfile } from '../../utils/useLiveProfile'
-import { redirectToHome, formatCoordinates, formatDistanceKm } from '../../utils/profileStorage'
+import { redirectToHome, formatCoordinates, formatDistanceKm, STORAGE_KEYS, getCharacterOriginKey, saveCharacterDraft } from '../../utils/profileStorage'
+import { displayCharacterName } from '../../utils/snapshotDisplay'
 const { profile, moment, loading, refreshing, error, load } = useLiveProfile()
 const details=ref(false), resetting=ref(false)
+const characterName=computed(()=>displayCharacterName(profile.value))
 const coords=computed(()=>profile.value ? formatCoordinates(profile.value.targetLocation.latitude,profile.value.targetLocation.longitude) : '')
 const distance=computed(()=>formatDistanceKm(moment.value?.distanceKm || 0))
 const timeDifference=computed(()=>{if(!moment.value)return '';const hours=(moment.value.targetWorld.utcOffsetSeconds-moment.value.originWorld.utcOffsetSeconds)/3600;return hours===0 ? '两边时间相同' : `对面${hours>0?'快':'慢'} ${Math.abs(hours)} 小时`})
@@ -47,14 +49,20 @@ function goTimeline(){uni.navigateTo({url:'/pages/timeline/index'})}
 function goShare(){uni.navigateTo({url:'/pages/share/index'})}
 async function handleReset(){
   if(resetting.value)return
-  // 保留定位，让换形象进入原有选择与创建流程；创建新档案会归档旧档案。
+  // 保留起点和角色身份；旧档案先补充名字，再选择形象。
   if(profile.value){
     const origin=profile.value.originLocation
-    uni.setStorageSync('otherMe:locationMode',origin.mode)
-    if(origin.mode==='manual')uni.setStorageSync('otherMe:selectedCity',{name:origin.cityName,country:origin.countryName,latitude:origin.latitude,longitude:origin.longitude})
-    else uni.setStorageSync('otherMe:userLocation',{source:'device',latitude:origin.latitude,longitude:origin.longitude,createdAt:Date.now()})
+    uni.setStorageSync(STORAGE_KEYS.locationMode,origin.mode)
+    if(origin.mode==='manual')uni.setStorageSync(STORAGE_KEYS.selectedCity,{name:origin.cityName,country:origin.countryName,latitude:origin.latitude,longitude:origin.longitude})
+    else uni.setStorageSync(STORAGE_KEYS.userLocation,{source:'device',latitude:origin.latitude,longitude:origin.longitude,createdAt:Date.now()})
+    if(profile.value.character){
+      saveCharacterDraft({originKey:getCharacterOriginKey(origin),...profile.value.character})
+      uni.navigateTo({url:'/pages/avatar-select/index'})
+      return
+    }
+    uni.removeStorageSync(STORAGE_KEYS.characterDraft)
   }
-  uni.navigateTo({url:'/pages/avatar-select/index'})
+  uni.navigateTo({url:'/pages/character-setup/index'})
 }
 </script>
 <style lang="scss" scoped>

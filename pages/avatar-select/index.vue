@@ -1,8 +1,9 @@
 <template>
 	<view class="page">
+		<button class="back" @click="goBack">‹ 返回</button>
 		<view class="header">
-			<text class="title">选择你的另一个我</text>
-			<text class="subtitle">它会在地球另一端，按照当地时间生活。</text>
+			<text class="title">为{{ characterName || '远方的自己' }}选择生活方式</text>
+			<text class="subtitle">{{ characterName || '远方的你' }}会在地球另一端，按照当地时间生活。</text>
 		</view>
 
 		<view class="avatar-list">
@@ -27,10 +28,10 @@
 			<button
 				class="btn"
 				:class="selectedAvatarId ? 'btn-primary' : 'btn-disabled'"
-				:disabled="isSubmitting"
+				:disabled="isSubmitting || !selectedAvatarId || !characterName"
 				@click="goGenerate"
 			>
-				生成我的另一个我
+				开启远方的生活
 			</button>
 		</view>
 	</view>
@@ -38,15 +39,33 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import type { Avatar } from '../../types/index'
 import { toSelectedAvatar } from '../../utils/cityPresets'
 import { AVATARS, getAvatarEmoji } from '../../utils/avatars'
-import { STORAGE_KEYS, getCachedSelectedAvatar } from '../../utils/profileStorage'
+import { STORAGE_KEYS, getCachedSelectedAvatar, getCachedCharacter, getCachedLocationMode, getCachedSelectedCity, getCachedUserLocation } from '../../utils/profileStorage'
 
 const avatars = AVATARS
 const cachedAvatar = getCachedSelectedAvatar() as { id?: string } | null
 const selectedAvatarId = ref(cachedAvatar?.id || '')
 const isSubmitting = ref(false)
+const characterName = ref('')
+
+onShow(() => {
+	const mode = getCachedLocationMode()
+	const location = mode === 'manual' ? getCachedSelectedCity() : mode === 'device' ? getCachedUserLocation() : null
+	const character = location && mode ? getCachedCharacter({ mode, latitude: location.latitude, longitude: location.longitude }) : null
+	if (!character) {
+		characterName.value = ''
+		uni.redirectTo({ url: '/pages/character-setup/index' })
+		return
+	}
+	characterName.value = character.name
+})
+
+function goBack() {
+	uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/character-setup/index' }) })
+}
 
 function selectAvatar(avatar: Avatar) {
 	selectedAvatarId.value = avatar.id
@@ -63,9 +82,13 @@ function selectAvatar(avatar: Avatar) {
 
 function goGenerate() {
 	if (isSubmitting.value) return
+	if (!characterName.value) {
+		uni.redirectTo({ url: '/pages/character-setup/index' })
+		return
+	}
 
 	if (!selectedAvatarId.value) {
-		uni.showToast({ title: '请先选择一个形象', icon: 'none' })
+		uni.showToast({ title: '请先选择一种生活方式', icon: 'none' })
 		return
 	}
 
@@ -82,7 +105,7 @@ function goGenerate() {
 <style lang="scss" scoped>
 .page {
 	min-height: 100vh;
-	padding: 248rpx 40rpx 64rpx;
+	padding: calc(var(--status-bar-height) + 98rpx) 32rpx calc(210rpx + env(safe-area-inset-bottom));
 	background: $am-bg;
 	box-sizing: border-box;
 }
@@ -91,12 +114,15 @@ function goGenerate() {
 	margin-bottom: 32rpx;
 }
 
+.back{display:inline-block;margin:0 0 26rpx;padding:0 8rpx;background:transparent;color:$am-text-muted;font-size:26rpx;line-height:50rpx}.back::after{border:0}
+
 .title {
 	display: block;
 	font-size: 40rpx;
 	font-weight: 600;
 	color: $am-text;
 	margin-bottom: 12rpx;
+	overflow-wrap: anywhere;
 }
 
 .subtitle {
@@ -171,7 +197,7 @@ function goGenerate() {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	padding: 24rpx 40rpx 48rpx;
+	padding: 24rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
 	background: linear-gradient(180deg, rgba(255, 247, 234, 0) 0%, $am-bg 30%);
 }
 
@@ -194,4 +220,6 @@ function goGenerate() {
 	background: #e8dfd3;
 	color: $am-text-muted;
 }
+
+@media(max-width:340px){.page{padding-left:24rpx;padding-right:24rpx}.title{font-size:35rpx}.avatar-card{padding:24rpx}.avatar-face{width:82rpx;height:82rpx}.avatar-name{font-size:28rpx}.avatar-desc{font-size:24rpx}}
 </style>

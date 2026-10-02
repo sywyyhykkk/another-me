@@ -8,6 +8,7 @@ import {
 } from './cityPresets'
 import {
 	getCachedLocationMode,
+	getCachedCharacter,
 	getCachedSelectedAvatar,
 	getCachedSelectedCity,
 	getCachedUserLocation
@@ -16,12 +17,15 @@ import {
 export async function buildCreateProfilePayload(): Promise<CreateVirtualProfilePayload> {
 	const originLocation = await buildOriginLocation()
 	const selectedAvatar = buildSelectedAvatar()
+	const character = getCachedCharacter(originLocation)
+	if (!character) throw new Error('请返回取名页面，完成名字和性别设置后再生成')
 
 	return {
 		originLocation,
 		selectedAvatar,
+		character,
 		targetMode: 'antipode',
-		profileName: `${selectedAvatar.name} · ${originLocation.cityName}的另一端`
+		profileName: `${character.name} · ${originLocation.cityName}的另一端`
 	}
 }
 

@@ -19,6 +19,12 @@
       }
     },
     {
+      "path": "pages/character-setup/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/avatar-select/index",
       "style": {
         "navigationStyle": "custom"

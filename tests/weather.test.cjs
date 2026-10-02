@@ -5,6 +5,8 @@ const { runInNewContext } = require('node:vm');
 const { stripTypeScriptTypes } = require('node:module');
 const source = readFileSync('utils/weather.ts', 'utf8').replace(/^import .*\n/gm, '').replace(/export /g, '');
 const helpers = runInNewContext(stripTypeScriptTypes(source) + '\n({weatherVisual,weatherTemperature})');
+const snapshotSource = readFileSync('utils/snapshotDisplay.ts', 'utf8').replace(/^import .*\n/gm, '').replace(/export /g, '');
+const snapshotHelpers = runInNewContext(stripTypeScriptTypes(snapshotSource) + '\n;({displayCharacterName,normalizeSnapshot})');
 test('天气图标覆盖昼夜、雨雪雾与未知状态，预报不伪装实况温度', () => {
   assert.equal(helpers.weatherVisual('100', true).asset, 'clear-day');
   assert.equal(helpers.weatherVisual('100', false).asset, 'clear-night');
@@ -26,8 +28,8 @@ test('分享海报固定天气素材、天气和温度，微信相对素材路�
     measureText: value => ({ width: [...value].length * 12 }), draw: (_, done) => done() }, { get: (target, key) => target[key] || (() => {}) });
   const uni = { getImageInfo: ({ src, success }) => success({ path: src.slice(1) }),
     createCanvasContext: () => ctx, canvasToTempFilePath: ({ success }) => success({ tempFilePath: 'poster.png' }) };
-  const { drawPoster, drawShareCard, renderPoster } = runInNewContext(stripTypeScriptTypes(source) + '\n({drawPoster,drawShareCard,renderPoster})', { ...helpers, uni });
-  const snapshot = { avatar: { name: '旅行者' }, scene: { isDay: false, habitat: 'boat_cabin', title: '船上小屋' },
+  const { drawPoster, drawShareCard, renderPoster } = runInNewContext(stripTypeScriptTypes(source) + '\n({drawPoster,drawShareCard,renderPoster})', { ...helpers, ...snapshotHelpers, uni });
+  const snapshot = { avatar: { name: '旅行者' }, character: { name: '洛安', gender: 'male' }, scene: { isDay: false, habitat: 'boat_cabin', title: '船上小屋' },
     currentTitle: '睡觉', currentState: 'sleeping', currentDescription: '安静休息', connectionText: '连接两边', dailyStory: { title: '小事', text: '今天的小事' },
     originWorld: { place: '昆明', time: '12:49', date: '2026-10-02', relativeDay: '今天', isDay: true, dayNight: '白昼', timeLabel: 'Asia/Shanghai',
       weather: { period: 'hourly', code: '100', text: '晴', temperature: 22 } },

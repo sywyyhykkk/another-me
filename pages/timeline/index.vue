@@ -4,16 +4,16 @@
 	</view>
 	<view v-else-if="activeProfile" class="page">
 		<view class="header">
-			<text class="title">另一个我的今天</text>
+			<text class="title">{{ characterName }}的今天</text>
 			<text class="subtitle">
-				当地时间 {{ displayLocalTime }} · {{ displayLocationLabel }}
+				{{ activeProfile.selectedAvatar.name }} · 当地时间 {{ displayLocalTime }} · {{ displayLocationLabel }}
 			</text>
 		</view>
 
 		<view class="story card"><text class="story-title">{{ moment?.dailyStory.title }}</text><text class="story-text">{{ moment?.dailyStory.text }}</text></view>
 		<view class="current card">
 			<text class="current-label">现在</text>
-			<text class="current-text">{{ currentLabel }}</text>
+			<text class="current-text">{{ characterName }}正在{{ currentLabel }}</text>
 		</view>
 
 		<view class="timeline card">
@@ -45,7 +45,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useLiveProfile } from '../../utils/useLiveProfile'
+import { displayCharacterName } from '../../utils/snapshotDisplay'
 const { profile:activeProfile, moment, loading:isLoading, error, load } = useLiveProfile()
+const characterName=computed(()=>displayCharacterName(activeProfile.value))
 const displayLocalTime=computed(()=>moment.value ? `${moment.value.targetWorld.date} ${moment.value.targetWorld.time}` : '')
 const displayLocationLabel=computed(()=>activeProfile.value?.targetLocation.locationLabel || '')
 const timeline=computed(()=>moment.value?.timeline || [])

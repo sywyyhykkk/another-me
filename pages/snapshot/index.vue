@@ -5,25 +5,27 @@
     <view v-else-if="!snapshot" class="empty"><text>{{ error }}</text><button @click="loadSnapshot">重新打开</button></view>
     <template v-else>
       <WorldPair :origin="snapshot.originWorld" :target="snapshot.targetWorld" />
-      <view class="card"><text class="eyebrow">{{ snapshot.avatar.name }} · 当时的它</text><text class="activity">它正在{{ snapshot.currentTitle }}</text><LifeScene :scene="snapshot.scene" :state="snapshot.currentState" :emoji="snapshot.avatar.emoji"/><text class="description">{{ snapshot.currentDescription }}</text><text class="connection">{{ snapshot.connectionText }}</text><text class="story-title">{{ snapshot.dailyStory.title }}</text><text class="description">{{ snapshot.dailyStory.text }}</text><text class="subtitle">{{ snapshot.todayMood }} · 虚拟生活</text></view>
+      <view class="card"><text class="eyebrow">{{ snapshot.avatar.name }} · 分享时刻</text><text class="activity">{{ characterName }}正在{{ snapshot.currentTitle }}</text><LifeScene :scene="snapshot.scene" :state="snapshot.currentState" :emoji="snapshot.avatar.emoji"/><text class="description">{{ snapshot.currentDescription }}</text><text class="connection">{{ snapshot.connectionText }}</text><text class="story-title">{{ snapshot.dailyStory.title }}</text><text class="description">{{ snapshot.dailyStory.text }}</text><text class="subtitle">{{ snapshot.todayMood }} · 虚拟生活</text></view>
       <text class="frozen">时间停留在分享时刻，{{ snapshot.originWorld.date }} {{ snapshot.originWorld.time }}（{{ snapshot.originWorld.place }}）</text>
     </template>
     <button class="btn" @click="createMine">看看我的地球另一端</button>
   </view>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import type { ShareSnapshot } from '../../types/virtualProfile'
 import { getShareSnapshot } from '../../api/share'
+import { displayCharacterName, normalizeSnapshot } from '../../utils/snapshotDisplay'
 import WorldPair from '../../components/WorldPair.vue'
 import LifeScene from '../../components/LifeScene.vue'
 const snapshot=ref<ShareSnapshot|null>(null),loading=ref(true),error=ref('')
+const characterName=computed(()=>displayCharacterName(snapshot.value))
 let snapshotId=''
 onLoad(options=>{snapshotId=options?.id || '';void loadSnapshot()})
 async function loadSnapshot(){
   loading.value=true
-  try{snapshot.value=await getShareSnapshot(snapshotId)}catch{error.value='这份分享快照暂时无法打开'}finally{loading.value=false}
+  try{snapshot.value=normalizeSnapshot(await getShareSnapshot(snapshotId))}catch{error.value='这份分享快照暂时无法打开'}finally{loading.value=false}
 }
 function createMine(){uni.reLaunch({url:'/pages/index/index?create=1'})}
 </script>

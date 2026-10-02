@@ -12,7 +12,7 @@
 		<template v-else>
 			<view class="intro card">
 				<text class="intro-text">
-					「对面的我」会根据你的位置，找到地球另一端的对应地点，并生成一个生活在那里的虚拟形象。它会按照当地时间和生活节奏，睡觉、学习、工作、吃饭或游玩。
+					「对面的我」会根据你的位置，找到地球另一端的对应地点。为远方的你取个名字、选择生活方式，从此按照当地时间，睡觉、学习、工作、吃饭或游玩。
 				</text>
 			</view>
 
@@ -51,7 +51,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { getActiveVirtualProfile } from '../../api/virtualProfile'
 import { showServiceUnavailableHint } from '../../utils/serviceUnavailableHint'
 import type { StoredUserLocation } from '../../types/virtualProfile'
-import { STORAGE_KEYS } from '../../utils/profileStorage'
+import { STORAGE_KEYS, invalidateCharacterDraftForOrigin } from '../../utils/profileStorage'
 
 const isLocating = ref(false)
 const isCheckingProfile = ref(true)
@@ -82,13 +82,14 @@ onLoad(async (options) => {
 })
 
 function saveUserLocation(location: StoredUserLocation) {
+	invalidateCharacterDraftForOrigin({ mode: 'device', latitude: location.latitude, longitude: location.longitude })
 	uni.setStorageSync(STORAGE_KEYS.userLocation, location)
 	uni.setStorageSync(STORAGE_KEYS.locationMode, 'device')
 }
 
-function goAvatarSelect() {
+function goCharacterSetup() {
 	uni.navigateTo({
-		url: '/pages/avatar-select/index'
+		url: '/pages/character-setup/index'
 	})
 }
 
@@ -112,7 +113,7 @@ function handleStart() {
 				longitude: res.longitude,
 				createdAt: Date.now()
 			})
-			goAvatarSelect()
+			goCharacterSetup()
 		},
 		fail: (err) => {
 			console.warn('getFuzzyLocation failed', err.errMsg || err)
@@ -137,7 +138,6 @@ function handleStart() {
 }
 
 function handleManualSelect() {
-	uni.setStorageSync(STORAGE_KEYS.locationMode, 'manual')
 	goLocationSelect()
 }
 </script>

@@ -5,7 +5,7 @@
     <view v-else-if="!snapshot" class="empty"><text>{{ error }}</text><button @click="prepare">重试</button></view>
     <template v-else>
       <WorldPair :origin="snapshot.originWorld" :target="snapshot.targetWorld" />
-      <view class="card"><text class="eyebrow">{{ snapshot.avatar.name }} · 分享时刻的快照</text><text class="activity">它正在{{ snapshot.currentTitle }}</text><LifeScene :scene="snapshot.scene" :state="snapshot.currentState" :emoji="snapshot.avatar.emoji"/><text class="description">{{ snapshot.currentDescription }}</text><text class="connection">{{ snapshot.connectionText }}</text><text class="description">{{ snapshot.dailyStory.title }} · {{ snapshot.dailyStory.text }}</text></view>
+      <view class="card"><text class="eyebrow">{{ snapshot.avatar.name }} · 分享时刻的快照</text><text class="activity">{{ characterName }}正在{{ snapshot.currentTitle }}</text><LifeScene :scene="snapshot.scene" :state="snapshot.currentState" :emoji="snapshot.avatar.emoji"/><text class="description">{{ snapshot.currentDescription }}</text><text class="connection">{{ snapshot.connectionText }}</text><text class="description">{{ snapshot.dailyStory.title }} · {{ snapshot.dailyStory.text }}</text></view>
       <!-- #ifdef MP-WEIXIN -->
       <button class="btn primary" open-type="share">分享给朋友</button>
       <!-- #endif -->
@@ -18,24 +18,26 @@
   </view>
 </template>
 <script setup lang="ts">
-import { ref, getCurrentInstance, nextTick } from 'vue'
+import { computed, ref, getCurrentInstance, nextTick } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import type { ShareSnapshot } from '../../types/virtualProfile'
 import { createShareSnapshot } from '../../api/share'
 import { renderPoster, savePoster } from '../../utils/poster'
 import { updateSharePagePayload } from '../../utils/sharePagePayload'
+import { displayCharacterName, normalizeSnapshot } from '../../utils/snapshotDisplay'
 import WorldPair from '../../components/WorldPair.vue'
 import LifeScene from '../../components/LifeScene.vue'
 const snapshot=ref<ShareSnapshot|null>(null), loading=ref(true),saving=ref(false),error=ref(''),posterError=ref('')
+const characterName=computed(()=>displayCharacterName(snapshot.value))
 const component=getCurrentInstance()?.proxy
 let posterPath=''
 async function prepare(){
   loading.value=true;snapshot.value=null;posterPath='';posterError.value=''
   updateSharePagePayload({title:'对面的我',path:'/pages/index/index',imageUrl:undefined})
   try{
-    snapshot.value=await createShareSnapshot()
+    snapshot.value=normalizeSnapshot(await createShareSnapshot())
     const s=snapshot.value
-    updateSharePagePayload({title:`${s.originWorld.place} ${s.originWorld.time} / ${s.targetWorld.place} ${s.targetWorld.time}：它在${s.currentTitle}`,path:`/pages/snapshot/index?id=${s.id}`})
+    updateSharePagePayload({title:`${s.originWorld.place} ${s.originWorld.time} / ${s.targetWorld.place} ${s.targetWorld.time}：${displayCharacterName(s)}正在${s.currentTitle}`,path:`/pages/snapshot/index?id=${s.id}`})
     await nextTick()
     try{const images=await Promise.all([renderPoster(s,'worldPoster',component),renderPoster(s,'worldCard',component,'card')]);posterPath=images[0];updateSharePagePayload({imageUrl:images[1]})}catch{posterError.value='海报暂未生成，点击保存可以重试'}
   }catch(e){error.value=e instanceof Error?e.message:'快照准备失败'}finally{loading.value=false}

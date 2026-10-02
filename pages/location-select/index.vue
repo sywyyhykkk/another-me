@@ -21,7 +21,7 @@
 		</view>
 
 		<view class="footer">
-			<button class="btn btn-primary" @click="goNext">选择另一个我</button>
+			<button class="btn btn-primary" @click="goNext">为远方的我取名</button>
 		</view>
 	</view>
 </template>
@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { MANUAL_CITY_NAMES, getCityPreset } from '../../utils/cityPresets'
-import { STORAGE_KEYS, getCachedSelectedCity } from '../../utils/profileStorage'
+import { STORAGE_KEYS, getCachedSelectedCity, invalidateCharacterDraftForOrigin } from '../../utils/profileStorage'
 
 const cities = MANUAL_CITY_NAMES
 const cachedCity = getCachedSelectedCity()
@@ -38,6 +38,7 @@ const selectedCityName = ref(cachedCity?.name || '')
 function selectCity(cityName: string) {
 	selectedCityName.value = cityName
 	const preset = getCityPreset(cityName)
+	invalidateCharacterDraftForOrigin({ mode: 'manual', latitude: preset.latitude, longitude: preset.longitude })
 	uni.setStorageSync(STORAGE_KEYS.selectedCity, {
 		name: preset.name,
 		country: preset.country,
@@ -54,7 +55,7 @@ function goNext() {
 	}
 	selectCity(selectedCityName.value)
 	uni.navigateTo({
-		url: '/pages/avatar-select/index'
+		url: '/pages/character-setup/index'
 	})
 }
 </script>

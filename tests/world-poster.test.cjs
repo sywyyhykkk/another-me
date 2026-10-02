@@ -5,24 +5,45 @@ const {runInNewContext}=require('node:vm');
 const {stripTypeScriptTypes}=require('node:module');
 const worldSource=readFileSync('utils/world.js','utf8').replace(/export /g,'');
 const world=runInNewContext(worldSource+'\n({profileMoment,clockAt})');
-const p={selectedAvatar:{role:'traveler',name:'旅行者'},originLocation:{cityName:'上海',latitude:31.23,longitude:121.47},targetLocation:{kind:'ocean',locationLabel:'South Pacific Ocean',latitude:-31.23,longitude:-58.53},metadata:{originTimezoneData:{timezoneId:'Asia/Shanghai'}},result:{distanceKm:20015}};
+const displaySource=readFileSync('utils/snapshotDisplay.ts','utf8').replace(/^import .*\n/gm,'').replace(/export /g,'');
+const snapshotDisplay=runInNewContext(stripTypeScriptTypes(displaySource)+'\n({displayCharacterName,normalizeSnapshot})');
+function posterApi(){
+ const source=readFileSync('utils/poster.ts','utf8').replace(/^import .*\n/gm,'').replace(/export /g,'');
+ return runInNewContext(stripTypeScriptTypes(source)+'\n({drawPoster,drawShareCard})',snapshotDisplay);
+}
+const p={character:{name:'洛安',gender:'male',continent:'SA'},selectedAvatar:{role:'traveler',name:'旅行者'},originLocation:{cityName:'上海',latitude:31.23,longitude:121.47},targetLocation:{kind:'ocean',locationLabel:'South Pacific Ocean',latitude:-31.23,longitude:-58.53},metadata:{originTimezoneData:{timezoneId:'Asia/Shanghai'}},result:{distanceKm:20015}};
 test('前后端每日规则相同，前端按可见时间推进所有内容',()=>{
  const backend=readFileSync('../another-me-backend/src/domain/world.js','utf8').replace("import('../types')","import('../types/virtualProfile')");
  assert.equal(backend,readFileSync('utils/world.js','utf8'));
  const a=world.profileMoment(p,new Date('2026-10-02T01:00:00Z')),b=world.profileMoment(p,new Date('2026-10-02T15:00:00Z'));
  assert.notEqual(a.currentTitle,b.currentTitle);assert.equal(a.currentDescription,a.timeline.find(i=>i.isCurrent).description);
  assert.equal(b.todayMood,b.timeline.find(i=>i.isCurrent).mood);assert.ok(b.shareText.includes(b.currentTitle));
+ for(const moment of [a,b]){
+  for(const value of [moment.currentDescription,moment.connectionText,moment.shareText])assert.ok(value.includes(p.character.name));
+  assert.doesNotMatch(JSON.stringify(moment),/它/);
+ }
 });
 test('双世界海报只绘制快照，包含两地日期时间、活动和故事',()=>{
- const source=readFileSync('utils/poster.ts','utf8').replace(/^import .*\n/gm,'').replace(/export /g,'');
- const {drawPoster}=runInNewContext(stripTypeScriptTypes(source)+'\n({drawPoster})');
+ const {drawPoster}=posterApi();
  const text=[];
  const ctx=new Proxy({fillText:(s,x,y)=>{assert.ok(x>=0&&x<=600&&y<=920);text.push(s)},measureText:s=>({width:[...s].length*17})},{get:(target,key)=>target[key]||(()=>{})});
  const m=world.profileMoment(p,new Date('2026-10-02T15:00:00Z'));
- const snapshot={id:'fake-public-snapshot',capturedAt:'2026-10-02T15:00:00Z',avatar:{name:'旅行者',role:'traveler'},...m};
+ const snapshot={id:'fake-public-snapshot',capturedAt:'2026-10-02T15:00:00Z',character:{name:p.character.name,gender:p.character.gender},avatar:{name:'旅行者',role:'traveler'},...m};
  assert.deepEqual(JSON.parse(JSON.stringify(drawPoster(ctx,snapshot))),{width:600,height:920});
- for(const value of [m.originWorld.place,m.originWorld.time,m.targetWorld.time,m.currentTitle,m.dailyStory.title])assert.ok(text.join('\n').includes(value));
- assert.ok(text.some(s=>s.includes(m.targetWorld.date)));assert.doesNotMatch(text.join('\n'),/31\.23|121\.47/);
+ for(const value of [p.character.name,p.selectedAvatar.name,m.originWorld.place,m.originWorld.time,m.targetWorld.time,m.currentTitle,m.dailyStory.title])assert.ok(text.join('\n').includes(value));
+ assert.ok(text.some(s=>s.includes(m.targetWorld.date)));assert.doesNotMatch(text.join('\n'),/31\.23|121\.47|它/);
+});
+
+test('微信分享卡片展示快照中的名字和职业，活动没有旧角色代词',()=>{
+ const {drawShareCard}=posterApi();
+ const text=[];
+ const ctx=new Proxy({fillText:(s,x,y)=>{assert.ok(x>=0&&x<=600&&y<=480);text.push(s)},measureText:s=>({width:[...s].length*17})},{get:(target,key)=>target[key]||(()=>{})});
+ const moment=world.profileMoment(p,new Date('2026-10-02T15:00:00Z'));
+ const snapshot={id:'fake-public-snapshot',capturedAt:'2026-10-02T15:00:00Z',character:{name:p.character.name,gender:p.character.gender},avatar:{name:p.selectedAvatar.name,role:'traveler'},...moment};
+ assert.deepEqual(JSON.parse(JSON.stringify(drawShareCard(ctx,snapshot))),{width:600,height:480});
+ const rendered=text.join('\n');
+ for(const value of [p.character.name,p.selectedAvatar.name,moment.currentTitle])assert.ok(rendered.includes(value));
+ assert.doesNotMatch(rendered,/它/);
 });
 
 test('页面显示启动时钟，活动与日期切换同步，隐藏与卸载停止更新',async()=>{
