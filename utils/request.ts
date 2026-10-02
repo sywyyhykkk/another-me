@@ -67,3 +67,10 @@ export async function requestApi<T>(path: string, method: Method = 'GET', data?:
 	}
 	return res.data
 }
+
+// 访客快照读取不登录，也不会调用任何私人档案接口。
+export async function requestPublicApi<T>(path: string): Promise<T> {
+  const res = await send<T & {message?:string}>(path,'GET')
+  if (res.statusCode<200 || res.statusCode>=300) throw new Error(res.data?.message || '分享快照暂时无法打开')
+  return res.data
+}

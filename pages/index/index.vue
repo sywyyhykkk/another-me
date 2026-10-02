@@ -56,7 +56,8 @@ import { STORAGE_KEYS } from '../../utils/profileStorage'
 const isLocating = ref(false)
 const isCheckingProfile = ref(true)
 
-onLoad(async () => {
+onLoad(async (options) => {
+	if (options?.create === '1') { isCheckingProfile.value = false; return }
 	// #ifdef MP-WEIXIN
 	uni.showShareMenu({
 		withShareTicket: true,

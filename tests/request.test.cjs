@@ -25,7 +25,7 @@ function client(handler, saved) {
   const source = readFileSync(join(__dirname, '../utils/request.ts'), 'utf8')
     .replace(/^import .*\n/gm, '').replace(/export /g, '')
     .replace(/\/\/ #ifndef MP-WEIXIN[\s\S]*?\/\/ #endif/g, '');
-  const api = runInNewContext(`${stripTypeScriptTypes(config + '\n' + source)}\n({requestApi, ensureWechatSession})`, { uni });
+  const api = runInNewContext(`${stripTypeScriptTypes(config + '\n' + source)}\n({requestApi, ensureWechatSession, requestPublicApi})`, { uni });
   return { ...api, requests, storage, logins: () => logins };
 }
 
@@ -98,4 +98,11 @@ test('登录失败可再次尝试，服务与网络错误不会被当作成功',
   await assert.rejects(api.requestApi('/geo/origin', 'POST'), /地理服务暂时不可用/);
   await assert.rejects(api.requestApi('/offline'), /network/);
   assert.equal(api.logins(), 2);
+});
+
+test('访客快照只调用公开接口，不登录、不读取私人档案',async()=>{
+  const api=client(()=>response({success:true,data:{id:'public-snapshot'}}));
+  const result=await api.requestPublicApi('/shares/public-snapshot');
+  assert.equal(result.data.id,'public-snapshot');assert.equal(api.logins(),0);
+  assert.equal(api.requests.length,1);assert.ok(!api.requests[0].header.Authorization);
 });

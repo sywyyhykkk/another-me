@@ -2,8 +2,8 @@
     "name" : "another-me",
     "appid" : "__UNI__E05FC61",
     "description" : "「对面的我」会根据你的位置找到地球另一端的地点，生成一个虚拟的“另一个你”。看看它此刻正在睡觉、学习、工作，还是在远方。",
-    "versionName" : "0.1.0",
-    "versionCode" : "10",
+    "versionName" : "0.8.0",
+    "versionCode" : "80",
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {

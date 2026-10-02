@@ -10,6 +10,7 @@
 			</text>
 		</view>
 
+		<view class="story card"><text class="story-title">{{ moment?.dailyStory.title }}</text><text class="story-text">{{ moment?.dailyStory.text }}</text></view>
 		<view class="current card">
 			<text class="current-label">现在</text>
 			<text class="current-text">{{ currentLabel }}</text>
@@ -29,6 +30,7 @@
 				<view class="timeline-content">
 					<text class="timeline-time">{{ item.time }}</text>
 					<text class="timeline-activity">{{ item.title }}</text>
+					<text class="story-text">{{ item.description }}</text>
 				</view>
 			</view>
 		</view>
@@ -37,99 +39,24 @@
 			<button class="btn btn-primary" @click="goBack">返回结果页</button>
 		</view>
 	</view>
+	<view v-else class="page"><text>{{ error }}</text><button @click="load()">重试</button></view>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
-import type { VirtualProfile } from '../../types/virtualProfile'
-import { formatAntipodeLocalTime } from '../../utils/antipodeTime'
-import {
-	fetchActiveProfile,
-	getCurrentTimelineLabel,
-	redirectToHome
-} from '../../utils/profileStorage'
-
-const activeProfile = ref<VirtualProfile | null>(null)
-const isLoading = ref(true)
-
-onLoad(() => {
-	loadProfile({ showFullPageLoading: true })
-})
-
-onShow(() => {
-	if (activeProfile.value && !isLoading.value) {
-		loadProfile({ silent: true })
-	}
-})
-
-async function loadProfile(options: { showFullPageLoading?: boolean; silent?: boolean } = {}) {
-	const { showFullPageLoading = false, silent = false } = options
-
-	if (showFullPageLoading) {
-		isLoading.value = true
-	}
-
-	let profile: VirtualProfile | null = null
-	try {
-		profile = await fetchActiveProfile()
-	} catch (error) {
-		console.warn('[timeline] loadProfile failed', error)
-		if (showFullPageLoading || !activeProfile.value) {
-			if (showFullPageLoading) isLoading.value = false
-			redirectToHome()
-			return
-		}
-		if (!silent) {
-			uni.showToast({ title: '更新失败', icon: 'none' })
-		}
-		return
-	}
-
-	if (showFullPageLoading) {
-		isLoading.value = false
-	}
-
-	if (!profile || !profile.result) {
-		if (showFullPageLoading || !activeProfile.value) {
-			redirectToHome()
-			return
-		}
-		if (!silent) {
-			uni.showToast({ title: '更新失败', icon: 'none' })
-		}
-		return
-	}
-
-	activeProfile.value = profile
-}
-
-const displayResult = computed(() => activeProfile.value!.result)
-
-const displayLocalTime = computed(() =>
-	formatAntipodeLocalTime(
-		activeProfile.value?.metadata?.timezoneData,
-		new Date(),
-		'--:--',
-		activeProfile.value?.targetLocation?.longitude
-	)
-)
-
-const displayLocationLabel = computed(() => activeProfile.value!.targetLocation.locationLabel)
-
-const timeline = computed(() => displayResult.value.timeline)
-
-const currentLabel = computed(() => getCurrentTimelineLabel(displayResult.value))
-
-function goBack() {
-	uni.navigateBack()
-}
+import { computed } from 'vue'
+import { useLiveProfile } from '../../utils/useLiveProfile'
+const { profile:activeProfile, moment, loading:isLoading, error, load } = useLiveProfile()
+const displayLocalTime=computed(()=>moment.value ? `${moment.value.targetWorld.date} ${moment.value.targetWorld.time}` : '')
+const displayLocationLabel=computed(()=>activeProfile.value?.targetLocation.locationLabel || '')
+const timeline=computed(()=>moment.value?.timeline || [])
+const currentLabel=computed(()=>moment.value?.currentTitle || '')
+function goBack(){uni.navigateBack()}
 </script>
 
 <style lang="scss" scoped>
 .page {
 	min-height: 100vh;
-	padding: 200rpx 40rpx 64rpx;
+	padding: calc(var(--status-bar-height) + 110rpx) 28rpx calc(50rpx + env(safe-area-inset-bottom));
 	background: $am-bg;
 	box-sizing: border-box;
 }
@@ -281,4 +208,5 @@ function goBack() {
 	color: #fff;
 	box-shadow: 0 8rpx 20rpx rgba(230, 168, 92, 0.35);
 }
+.story{padding:28rpx;margin-bottom:24rpx}.story-title{display:block;font-size:28rpx;font-weight:600}.story-text{display:block;font-size:24rpx;line-height:1.6;color:$am-text-muted;margin-top:10rpx}
 </style>

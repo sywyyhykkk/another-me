@@ -29,16 +29,26 @@ SQLite 数据默认保存在后端的 `data/another-me.sqlite`，重启后保留
 ## 小程序调试
 
 1. 在 HBuilderX 打开小程序项目，运行到微信开发者工具。
-2. `config/api.ts` 默认指向本机后端。微信开发者工具本地调试时开启“不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书”。
+2. `config/api.ts` 目前指向已部署的 HTTPS 后端；本地开发时可改为本机后端地址。微信开发者工具本地调试时开启“不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书”。
 3. 首页首次请求自动完成微信登录，无须额外登录页面；会话过期时自动重新登录。
-4. 定位或手动选城后选择形象，即可创建档案；结果、日程和分享页面读取同一档案。
+4. 定位或手动选城后选择形象，即可创建档案；结果和日程页面按同一规则推进活动；分享页面创建固定的公开快照。
 5. 真机本地调试需将 `config/api.ts` 改为电脑在同一局域网的 IP，并开启小程序调试模式。
 
 ## 发布时配置
 
-服务器准备好后部署后端，再将 `config/api.ts` 改为实际 HTTPS 地址，
-例如 `https://api.example.com/api`，并在微信公众平台配置对应的 request 合法域名。
+已部署后端为 `https://another-me.m4n9o.com/api`；在微信公众平台配置
+request 合法域名 `https://another-me.m4n9o.com`。服务器使用 `ssh another-me-server` 登录，
+服务为 `another-me.service`，部署目录为 `/opt/another-me`。
 发布配置保持 `manifest.json` 中的 `urlCheck: true`。
 
 后端环境变量、启动方法及接口详见后端 README。小程序版本在
 `manifest.json` 的 `versionName` / `versionCode` 中维护。
+
+
+共同产品依据为桌面 `another me 需求文档.md`。分享快照页面无需登录。
+发行版本为 0.8.0，使用 HBuilderX 发行，再从微信开发者工具上传构建目录。
+0.8.0 已于 2026-10-02 上传至微信开发者工具，CLI 返回 `✔ upload`。
+微信 request 合法域名已配置，腾讯云已放行公网 TCP 443。公网 HTTPS 健康检查返回 HTTP 200；
+正式构建保持域名校验，并通过正式 HTTPS 地址完成重新登录和已有档案读取。
+上传为开发版本提交，审核和正式发布在微信公众平台另行操作。
+如灰度基础库导致模拟器启动失败，在本地设置选择非灰度基础库后重新编译。
