@@ -1,7 +1,4 @@
-export function getCreateProfileErrorMessage(
-	error: unknown,
-	serverMessage?: string
-): string {
+export function getCreateProfileErrorMessage(error: unknown, serverMessage?: string): string {
 	const parts: string[] = []
 	if (serverMessage) parts.push(serverMessage)
 	if (error instanceof Error && error.message) parts.push(error.message)
@@ -20,17 +17,10 @@ export function getCreateProfileErrorMessage(
 	if (msg.includes('登录')) {
 		return msg
 	}
-	if (
-		lower.includes('timeout') ||
-		msg.includes('请求超时') ||
-		msg.includes('timed out')
-	) {
+	if (lower.includes('timeout') || msg.includes('请求超时') || msg.includes('timed out')) {
 		return '生成时间较长，请稍后重试；若反复失败，请改用手动选择城市。'
 	}
-	if (
-		lower.includes('network') ||
-		msg.includes('fail')
-	) {
+	if (lower.includes('network') || msg.includes('fail')) {
 		return '网络不太稳定，请稍后重试。'
 	}
 	if (msg.includes('Invalid') || msg.includes('invalid')) {

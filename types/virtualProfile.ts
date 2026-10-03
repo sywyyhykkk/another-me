@@ -6,21 +6,21 @@ export type CharacterGender = 'male' | 'female' | 'unspecified'
 export type ContinentCode = 'AS' | 'EU' | 'AF' | 'NA' | 'SA' | 'OC' | 'AN'
 
 export interface CharacterIdentity {
-  name: string
-  gender: CharacterGender
-  continent: ContinentCode
+	name: string
+	gender: CharacterGender
+	continent: ContinentCode
 }
 
 export interface SuggestCharacterPayload {
-  originLocation: OriginLocation
-  gender: CharacterGender
-  excludeName?: string
+	originLocation: OriginLocation
+	gender: CharacterGender
+	excludeName?: string
 }
 
 export interface CharacterSuggestion extends CharacterIdentity {
-  continentLabel: string
-  locationLabel: string
-  targetKind: TargetKind
+	continentLabel: string
+	locationLabel: string
+	targetKind: TargetKind
 }
 
 export interface OriginGeoResolved {
@@ -60,12 +60,12 @@ export interface SelectedAvatar {
 }
 
 export interface TargetLocation extends AntipodeCoordinates {
-  locationLabel: string
-  countryName: string
-  regionName: string
-  kind: TargetKind
-  oceanName?: string
-  countryCode?: string
+	locationLabel: string
+	countryName: string
+	regionName: string
+	kind: TargetKind
+	oceanName?: string
+	countryCode?: string
 }
 
 export interface ProfileTimelineItem {
@@ -98,48 +98,48 @@ export interface GeoTimezoneData {
 }
 
 export interface WorldWeather {
-  period: 'hourly' | 'daily'
-  source: 'qweather'
-  date: string
-  code: string
-  text: string
-  temperature?: number
-  temperatureMin?: number
-  temperatureMax?: number
-  fetchedAt: string
-  expiresAt: string
-  stale?: boolean
-  attributions: string[]
+	period: 'hourly' | 'daily'
+	source: 'qweather'
+	date: string
+	code: string
+	text: string
+	temperature?: number
+	temperatureMin?: number
+	temperatureMax?: number
+	fetchedAt: string
+	expiresAt: string
+	stale?: boolean
+	attributions: string[]
 }
 export interface WorldClock {
-  place: string
-  date: string
-  time: string
-  relativeDay: string
-  hour: number
-  localMinutes: number
-  weekday: number
-  estimated: boolean
-  utcOffsetSeconds: number
-  isDay: boolean
-  dayNight: string
-  dayNightEstimated: boolean
-  timeLabel: string
-  weather?: WorldWeather
+	place: string
+	date: string
+	time: string
+	relativeDay: string
+	hour: number
+	localMinutes: number
+	weekday: number
+	estimated: boolean
+	utcOffsetSeconds: number
+	isDay: boolean
+	dayNight: string
+	dayNightEstimated: boolean
+	timeLabel: string
+	weather?: WorldWeather
 }
 export interface Scene {
-  habitat: 'boat_cabin' | 'land_home' | 'unknown_home'
-  title: string
-  description: string
-  isDay: boolean
+	habitat: 'boat_cabin' | 'land_home' | 'unknown_home'
+	title: string
+	description: string
+	isDay: boolean
 }
 export interface VirtualProfileResult {
-  originWorld: WorldClock
-  targetWorld: WorldClock
-  dailyStory: { date: string; title: string; text: string }
-  nextActivity: ProfileTimelineItem
-  scene: Scene
-  connectionText: string
+	originWorld: WorldClock
+	targetWorld: WorldClock
+	dailyStory: { date: string; title: string; text: string }
+	nextActivity: ProfileTimelineItem
+	scene: Scene
+	connectionText: string
 	localTime: string
 	localDateLabel: string
 	dayType: 'weekday' | 'weekend' | 'holiday'
@@ -163,7 +163,7 @@ export interface VirtualProfile {
 	profileName: string
 	profileStatus: 'active' | 'archived'
 	selectedAvatar: SelectedAvatar
-  character?: CharacterIdentity
+	character?: CharacterIdentity
 	creationSource: 'onboarding' | 'manual' | 'future_custom'
 	originLocation: OriginLocation
 	antipode?: AntipodeCoordinates
@@ -201,7 +201,7 @@ export interface ApiResponse<T> {
 export interface CreateVirtualProfilePayload {
 	originLocation: OriginLocation
 	selectedAvatar: SelectedAvatar
-  character: CharacterIdentity
+	character: CharacterIdentity
 	targetMode?: TargetMode
 	profileName?: string
 }
@@ -228,18 +228,18 @@ export interface StoredUserLocation {
 
 // 唯一公开的分享内容；不包含用户身份、档案 ID 或两端的坐标。
 export interface ShareSnapshot {
-  currentState: string
-  id: string
-  capturedAt: string
-  avatar: { name: string; emoji: string; role: AvatarRole }
-  character?: Pick<CharacterIdentity, 'name' | 'gender'>
-  originWorld: WorldClock
-  targetWorld: WorldClock
-  currentTitle: string
-  currentDescription: string
-  todayMood: string
-  scene: Scene
-  dailyStory: { date: string; title: string; text: string }
-  connectionText: string
-  shareText: string
+	currentState: string
+	id: string
+	capturedAt: string
+	avatar: { name: string; emoji: string; role: AvatarRole }
+	character?: Pick<CharacterIdentity, 'name' | 'gender'>
+	originWorld: WorldClock
+	targetWorld: WorldClock
+	currentTitle: string
+	currentDescription: string
+	todayMood: string
+	scene: Scene
+	dailyStory: { date: string; title: string; text: string }
+	connectionText: string
+	shareText: string
 }

@@ -2,19 +2,33 @@ import { API_BASE_URL } from '../config/api'
 import type { ApiResponse } from '../types/virtualProfile'
 
 type Method = 'GET' | 'POST' | 'DELETE'
-interface Session { token: string; expiresAt: number }
-interface HttpResult<T> { statusCode: number; data: T }
+interface Session {
+	token: string
+	expiresAt: number
+}
+interface HttpResult<T> {
+	statusCode: number
+	data: T
+}
 const SESSION_KEY = 'otherMe:authSession'
 let loginPromise: Promise<Session> | null = null
 
-function send<T>(path: string, method: Method, data?: object, token?: string): Promise<HttpResult<T>> {
+function send<T>(
+	path: string,
+	method: Method,
+	data?: object,
+	token?: string
+): Promise<HttpResult<T>> {
 	return new Promise((resolve, reject) => {
 		uni.request({
 			url: `${API_BASE_URL}${path}`,
 			method,
 			data,
 			timeout: 60000,
-			header: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+			header: {
+				'Content-Type': 'application/json',
+				...(token ? { Authorization: `Bearer ${token}` } : {})
+			},
 			success: (res) => resolve({ statusCode: res.statusCode, data: res.data as T }),
 			fail: (error) => reject(new Error(error.errMsg || '网络请求失败'))
 		})
@@ -22,18 +36,13 @@ function send<T>(path: string, method: Method, data?: object, token?: string): P
 }
 
 function getLoginCode(): Promise<string> {
-	// #ifdef MP-WEIXIN
 	return new Promise((resolve, reject) => {
 		uni.login({
 			provider: 'weixin',
-			success: (res) => res.code ? resolve(res.code) : reject(new Error('未获取到微信登录凭证')),
+			success: (res) => (res.code ? resolve(res.code) : reject(new Error('未获取到微信登录凭证'))),
 			fail: (error) => reject(new Error(error.errMsg || '微信登录失败'))
 		})
 	})
-	// #endif
-	// #ifndef MP-WEIXIN
-	return Promise.reject(new Error('请在微信小程序中登录'))
-	// #endif
 }
 
 export function ensureWechatSession(): Promise<Session> {
@@ -43,16 +52,27 @@ export function ensureWechatSession(): Promise<Session> {
 	loginPromise = (async () => {
 		const code = await getLoginCode()
 		const res = await send<ApiResponse<Session>>('/auth/login', 'POST', { code })
-		if (res.statusCode < 200 || res.statusCode >= 300 || !res.data.success || !res.data.data?.token) {
+		if (
+			res.statusCode < 200 ||
+			res.statusCode >= 300 ||
+			!res.data.success ||
+			!res.data.data?.token
+		) {
 			throw new Error(res.data.message || '微信登录失败')
 		}
 		uni.setStorageSync(SESSION_KEY, res.data.data)
 		return res.data.data
-	})().finally(() => { loginPromise = null })
+	})().finally(() => {
+		loginPromise = null
+	})
 	return loginPromise
 }
 
-export async function requestApi<T>(path: string, method: Method = 'GET', data?: object): Promise<T> {
+export async function requestApi<T>(
+	path: string,
+	method: Method = 'GET',
+	data?: object
+): Promise<T> {
 	let session = await ensureWechatSession()
 	let res = await send<T & { message?: string }>(path, method, data, session.token)
 	if (res.statusCode === 401) {
@@ -70,7 +90,8 @@ export async function requestApi<T>(path: string, method: Method = 'GET', data?:
 
 // 访客快照读取不登录，也不会调用任何私人档案接口。
 export async function requestPublicApi<T>(path: string): Promise<T> {
-  const res = await send<T & {message?:string}>(path,'GET')
-  if (res.statusCode<200 || res.statusCode>=300) throw new Error(res.data?.message || '分享快照暂时无法打开')
-  return res.data
+	const res = await send<T & { message?: string }>(path, 'GET')
+	if (res.statusCode < 200 || res.statusCode >= 300)
+		throw new Error(res.data?.message || '分享快照暂时无法打开')
+	return res.data
 }

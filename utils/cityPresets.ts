@@ -15,7 +15,7 @@ export const CITY_PRESETS: Record<string, CityPreset> = {
 	成都: { name: '成都', country: '中国', latitude: 30.5728, longitude: 104.0668 },
 	杭州: { name: '杭州', country: '中国', latitude: 30.2741, longitude: 120.1551 },
 	深圳: { name: '深圳', country: '中国', latitude: 22.5431, longitude: 114.0579 },
-	西安: { name: '西安', country: '中国', latitude: 34.3416, longitude: 108.9398 },
+	西安: { name: '西安', country: '中国', latitude: 34.3416, longitude: 108.9398 }
 }
 
 export const DEFAULT_CITY_PRESET = CITY_PRESETS['昆明']
@@ -51,7 +51,8 @@ export function toSelectedAvatar(input: {
 	role?: AvatarRole | string
 	emoji?: string
 }): SelectedAvatar {
-	const role = (input.role && AVATAR_ROLE_MAP[input.role]) || AVATAR_ROLE_MAP[input.id] || 'office_worker'
+	const role =
+		(input.role && AVATAR_ROLE_MAP[input.role]) || AVATAR_ROLE_MAP[input.id] || 'office_worker'
 	return {
 		id: input.id,
 		role,

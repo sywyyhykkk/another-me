@@ -32,7 +32,9 @@ export interface CharacterDraft {
 const CHARACTER_GENDERS: CharacterGender[] = ['male', 'female', 'unspecified']
 const CONTINENT_CODES: ContinentCode[] = ['AS', 'EU', 'AF', 'NA', 'SA', 'OC', 'AN']
 
-export function getCharacterOriginKey(origin: Pick<OriginLocation, 'mode' | 'latitude' | 'longitude'>) {
+export function getCharacterOriginKey(
+	origin: Pick<OriginLocation, 'mode' | 'latitude' | 'longitude'>
+) {
 	return `${origin.mode}:${origin.latitude}:${origin.longitude}`
 }
 
@@ -45,26 +47,45 @@ export function getCharacterNameError(value: string) {
 	return ''
 }
 
-export function getCachedCharacterDraft(origin?: Pick<OriginLocation, 'mode' | 'latitude' | 'longitude'>): CharacterDraft | null {
+export function getCachedCharacterDraft(
+	origin?: Pick<OriginLocation, 'mode' | 'latitude' | 'longitude'>
+): CharacterDraft | null {
 	const draft = uni.getStorageSync(STORAGE_KEYS.characterDraft) as CharacterDraft | ''
-	if (!draft || typeof draft !== 'object' || typeof draft.originKey !== 'string' || typeof draft.name !== 'string' || !CHARACTER_GENDERS.includes(draft.gender)) return null
+	if (
+		!draft ||
+		typeof draft !== 'object' ||
+		typeof draft.originKey !== 'string' ||
+		typeof draft.name !== 'string' ||
+		!CHARACTER_GENDERS.includes(draft.gender)
+	)
+		return null
 	if (origin && draft.originKey !== getCharacterOriginKey(origin)) return null
-	return { ...draft, continent: CONTINENT_CODES.includes(draft.continent as ContinentCode) ? draft.continent : undefined }
+	return {
+		...draft,
+		continent: CONTINENT_CODES.includes(draft.continent as ContinentCode)
+			? draft.continent
+			: undefined
+	}
 }
 
 export function saveCharacterDraft(draft: CharacterDraft) {
 	uni.setStorageSync(STORAGE_KEYS.characterDraft, draft)
 }
 
-export function getCachedCharacter(origin: Pick<OriginLocation, 'mode' | 'latitude' | 'longitude'>): CharacterIdentity | null {
+export function getCachedCharacter(
+	origin: Pick<OriginLocation, 'mode' | 'latitude' | 'longitude'>
+): CharacterIdentity | null {
 	const draft = getCachedCharacterDraft(origin)
 	if (!draft?.continent || getCharacterNameError(draft.name)) return null
 	return { name: draft.name.trim(), gender: draft.gender, continent: draft.continent }
 }
 
-export function invalidateCharacterDraftForOrigin(origin: Pick<OriginLocation, 'mode' | 'latitude' | 'longitude'>) {
+export function invalidateCharacterDraftForOrigin(
+	origin: Pick<OriginLocation, 'mode' | 'latitude' | 'longitude'>
+) {
 	const draft = getCachedCharacterDraft()
-	if (draft && draft.originKey !== getCharacterOriginKey(origin)) uni.removeStorageSync(STORAGE_KEYS.characterDraft)
+	if (draft && draft.originKey !== getCharacterOriginKey(origin))
+		uni.removeStorageSync(STORAGE_KEYS.characterDraft)
 }
 
 export async function fetchActiveProfile(options?: {
@@ -79,7 +100,7 @@ export async function fetchActiveProfile(options?: {
 
 export function redirectToHome() {
 	uni.reLaunch({
-		url: '/pages/index/index'
+		url: '/pages/index/index?create=1'
 	})
 }
 

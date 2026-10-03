@@ -1,6 +1,7 @@
 # 对面的我 — 本地开发与发布
 
 小程序通过 HTTP 调用独立的 NestJS 后端。
+前端只支持微信小程序，使用 uni-app、Vue 3 和 TypeScript。
 后端仓库：[another-me-backend](https://github.com/sywyyhykkk/another-me-backend)。
 本机小程序目录为 `~/Desktop/another-me`，后端目录为 `~/Desktop/another-me-backend`。
 
@@ -28,11 +29,23 @@ SQLite 数据默认保存在后端的 `data/another-me.sqlite`，重启后保留
 
 ## 小程序调试
 
-1. 在 HBuilderX 打开小程序项目，运行到微信开发者工具。
+1. 在小程序目录运行 `npm ci`，再在 HBuilderX 打开项目，运行到微信开发者工具。
 2. `config/api.ts` 目前指向已部署的 HTTPS 后端；本地开发时可改为本机后端地址。微信开发者工具本地调试时开启“不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书”。
 3. 首页首次请求自动完成微信登录，无须额外登录页面；会话过期时自动重新登录。
-4. 定位或手动选城后选择形象，即可创建档案；结果和日程页面按同一规则推进活动；分享页面创建固定的公开快照。
+4. 定位或手动选城后设置名字与性别，再选择形象创建档案；结果和日程页面按同一规则推进活动；分享页面创建固定的公开快照。创建成功后的结果页返回统一回到首页；“换一个形象”先进入名字与性别设置页。
 5. 真机本地调试需将 `config/api.ts` 改为电脑在同一局域网的 IP，并开启小程序调试模式。
+
+## 代码格式与检查
+
+自有 Vue、TypeScript、JavaScript、SCSS、配置和测试文件使用项目 Prettier 配置：
+
+```bash
+npm run format
+npm run format:check
+npm test
+```
+
+第三方组件、编译产物、素材和本地开发工具配置不参与格式化。微信小程序构建仍由 HBuilderX 完成。
 
 ## 发布时配置
 
@@ -43,7 +56,6 @@ request 合法域名 `https://another-me.m4n9o.com`。服务器使用 `ssh anoth
 
 后端环境变量、启动方法及接口详见后端 README。小程序版本在
 `manifest.json` 的 `versionName` / `versionCode` 中维护。
-
 
 共同产品依据为桌面 `another me 需求文档.md`。分享快照页面无需登录。
 发行版本为 0.8.0，使用 HBuilderX 发行，再从微信开发者工具上传构建目录。

@@ -1,4 +1,8 @@
-import type { CreateVirtualProfilePayload, OriginLocation, SelectedAvatar } from '../types/virtualProfile'
+import type {
+	CreateVirtualProfilePayload,
+	OriginLocation,
+	SelectedAvatar
+} from '../types/virtualProfile'
 import { resolveOriginLocation } from '../api/geoResolver'
 import {
 	DEFAULT_CITY_PRESET,
@@ -70,10 +74,7 @@ async function enrichDeviceOriginLocation(originLocation: OriginLocation): Promi
 	}
 
 	try {
-		const res = await resolveOriginLocation(
-			originLocation.latitude,
-			originLocation.longitude
-		)
+		const res = await resolveOriginLocation(originLocation.latitude, originLocation.longitude)
 		if (res.success && res.data) {
 			return {
 				...originLocation,
