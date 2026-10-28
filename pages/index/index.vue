@@ -181,7 +181,7 @@
 
 	.app-name {
 		display: block;
-		font-size: 44rpx;
+		font-size: $am-font-size-display;
 		font-weight: 600;
 		color: $am-text;
 		margin-bottom: 16rpx;
@@ -190,7 +190,7 @@
 
 	.main-title {
 		display: block;
-		font-size: 30rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.6;
 		color: $am-text-muted;
 		padding: 0 16rpx;
@@ -203,7 +203,7 @@
 
 	.checking-text {
 		display: block;
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 		text-align: center;
 	}
@@ -221,7 +221,7 @@
 	}
 
 	.intro-text {
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.8;
 		color: $am-text;
 	}
@@ -289,7 +289,7 @@
 		height: 96rpx;
 		line-height: 96rpx;
 		border-radius: 48rpx;
-		font-size: 30rpx;
+		font-size: $am-font-size-base;
 		border: none;
 		margin: 0;
 	}
@@ -322,7 +322,7 @@
 		display: block;
 		margin-top: auto;
 		padding: 0 16rpx;
-		font-size: 22rpx;
+		font-size: $am-font-size-hint;
 		line-height: 1.7;
 		color: $am-text-muted;
 		text-align: center;

@@ -184,7 +184,7 @@
 	}
 
 	.title {
-		font-size: 34rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		color: $am-text;
 		text-align: center;
@@ -219,7 +219,7 @@
 		border-radius: 50%;
 		background: #f0e6d8;
 		color: $am-text-muted;
-		font-size: 22rpx;
+		font-size: $am-font-size-base;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -240,7 +240,7 @@
 	}
 
 	.step-text {
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 	}
 

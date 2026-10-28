@@ -182,6 +182,7 @@
 </script>
 <style lang="scss" scoped>
 	.page {
+		font-size: $am-font-size-base;
 		min-height: 100vh;
 		box-sizing: border-box;
 		padding: calc(var(--status-bar-height) + 110rpx) 28rpx calc(40rpx + env(safe-area-inset-bottom));
@@ -195,11 +196,11 @@
 		margin: 0 8rpx 24rpx;
 	}
 	.brand {
-		font-size: 32rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 	}
 	.refresh {
-		font-size: 23rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 		background: transparent;
 		margin: 0;
@@ -223,41 +224,41 @@
 	.eyebrow {
 		display: block;
 		color: $am-text-muted;
-		font-size: 23rpx;
+		font-size: $am-font-size-base;
 	}
 	.activity-title {
 		display: block;
-		font-size: 38rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		line-height: 1.4;
 		margin: 14rpx 0;
 	}
 	.mood {
-		font-size: 23rpx;
+		font-size: $am-font-size-base;
 		color: #78977b;
 	}
 	.description {
 		display: block;
-		font-size: 27rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.65;
 	}
 	.scene-note {
 		display: block;
-		font-size: 21rpx;
+		font-size: $am-font-size-hint;
 		line-height: 1.5;
 		color: $am-text-muted;
 		margin-top: 12rpx;
 	}
 	.connection {
 		display: block;
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.8;
 		margin: 30rpx 18rpx;
 		color: #927052;
 	}
 	.story-title {
 		display: block;
-		font-size: 31rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		margin: 14rpx 0;
 	}
@@ -268,7 +269,7 @@
 	}
 	.next-title {
 		display: block;
-		font-size: 27rpx;
+		font-size: $am-font-size-base;
 		margin-top: 8rpx;
 	}
 	.actions {
@@ -280,7 +281,7 @@
 		flex: 1;
 		min-width: 0;
 		border-radius: 48rpx;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		padding: 0 10rpx;
 		line-height: 88rpx;
 		margin: 0;
@@ -298,7 +299,7 @@
 	.reset {
 		background: transparent;
 		color: $am-text-muted;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		margin-top: 22rpx;
 	}
 	.detail-toggle::after,
@@ -309,7 +310,7 @@
 		display: flex;
 		justify-content: space-between;
 		gap: 22rpx;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.6;
 		padding: 15rpx 0;
 	}
@@ -322,7 +323,7 @@
 	}
 	.error {
 		display: block;
-		font-size: 22rpx;
+		font-size: $am-font-size-base;
 		text-align: center;
 		color: #a05e4c;
 		margin: 20rpx;
@@ -330,7 +331,7 @@
 	.back {
 		background: transparent;
 		color: $am-text-muted;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		line-height: 50rpx;
 		margin: 0;
 		padding: 0 8rpx;
@@ -341,9 +342,6 @@
 	@media (max-width: 340px) {
 		.actions {
 			flex-direction: column;
-		}
-		.activity-title {
-			font-size: 34rpx;
 		}
 	}
 </style>

@@ -75,6 +75,7 @@
 
 <style lang="scss" scoped>
 	.page {
+		font-size: $am-font-size-base;
 		min-height: 100vh;
 		padding: calc(var(--status-bar-height) + 110rpx) 28rpx calc(50rpx + env(safe-area-inset-bottom));
 		background: $am-bg;
@@ -88,7 +89,7 @@
 	}
 
 	.loading-text {
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 	}
 
@@ -98,7 +99,7 @@
 
 	.title {
 		display: block;
-		font-size: 40rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		color: $am-text;
 		margin-bottom: 12rpx;
@@ -106,7 +107,7 @@
 
 	.subtitle {
 		display: block;
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 	}
 
@@ -128,7 +129,9 @@
 	}
 
 	.current-label {
-		font-size: 24rpx;
+		flex-shrink: 0;
+		font-size: $am-font-size-base;
+		white-space: nowrap;
 		color: $am-secondary;
 		background: rgba(143, 185, 150, 0.2);
 		padding: 6rpx 16rpx;
@@ -136,8 +139,11 @@
 	}
 
 	.current-text {
-		font-size: 30rpx;
+		flex: 1;
+		min-width: 0;
+		font-size: $am-font-size-title;
 		font-weight: 600;
+		line-height: 1.5;
 		color: $am-text;
 	}
 
@@ -185,14 +191,14 @@
 
 	.timeline-time {
 		display: block;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 		margin-bottom: 6rpx;
 	}
 
 	.timeline-activity {
 		display: block;
-		font-size: 30rpx;
+		font-size: $am-font-size-base;
 		color: $am-text;
 	}
 
@@ -218,7 +224,7 @@
 		height: 96rpx;
 		line-height: 96rpx;
 		border-radius: 48rpx;
-		font-size: 30rpx;
+		font-size: $am-font-size-base;
 		border: none;
 		margin: 0;
 	}
@@ -234,12 +240,12 @@
 	}
 	.story-title {
 		display: block;
-		font-size: 28rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 	}
 	.story-text {
 		display: block;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.6;
 		color: $am-text-muted;
 		margin-top: 10rpx;

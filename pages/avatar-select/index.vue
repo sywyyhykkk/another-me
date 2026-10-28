@@ -152,7 +152,7 @@
 		padding: 0 8rpx;
 		background: transparent;
 		color: $am-text-muted;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		line-height: 50rpx;
 	}
 	.back::after {
@@ -161,7 +161,7 @@
 
 	.title {
 		display: block;
-		font-size: 40rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		color: $am-text;
 		margin-bottom: 12rpx;
@@ -170,7 +170,7 @@
 
 	.subtitle {
 		display: block;
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.6;
 		color: $am-text-muted;
 	}
@@ -213,7 +213,7 @@
 	}
 
 	.avatar-emoji {
-		font-size: 40rpx;
+		font-size: $am-font-size-display;
 	}
 
 	.avatar-info {
@@ -222,7 +222,7 @@
 
 	.avatar-name {
 		display: block;
-		font-size: 30rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		color: $am-text;
 		margin-bottom: 8rpx;
@@ -230,7 +230,7 @@
 
 	.avatar-desc {
 		display: block;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.5;
 		color: $am-text-muted;
 	}
@@ -262,7 +262,7 @@
 		height: 96rpx;
 		line-height: 96rpx;
 		border-radius: 48rpx;
-		font-size: 30rpx;
+		font-size: $am-font-size-base;
 		border: none;
 		margin: 0;
 	}
@@ -283,21 +283,12 @@
 			padding-left: 24rpx;
 			padding-right: 24rpx;
 		}
-		.title {
-			font-size: 35rpx;
-		}
 		.avatar-card {
 			padding: 24rpx;
 		}
 		.avatar-face {
 			width: 82rpx;
 			height: 82rpx;
-		}
-		.avatar-name {
-			font-size: 28rpx;
-		}
-		.avatar-desc {
-			font-size: 24rpx;
 		}
 	}
 </style>

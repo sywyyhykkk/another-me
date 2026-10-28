@@ -56,22 +56,28 @@
 				</view>
 			</view>
 
-			<view v-if="loadingOrigin || suggesting" class="place-note">
-				<view class="status-dot status-dot--loading" />
-				<text>{{ loadingOrigin ? '正在确认你的起点...' : '正在寻找地球另一端的名字灵感...' }}</text>
-			</view>
-			<view v-else-if="continentLabel" class="place-note">
-				<view class="status-dot" />
-				<view>
-					<text class="place-title">名字灵感来自{{ continentLabel }}</text>
-					<text v-if="locationLabel" class="place-detail">地球另一端 · {{ locationLabel }}</text>
+			<view class="suggestion-status">
+				<view v-if="error" class="error-card">
+					<scroll-view scroll-y class="error-message">
+						<text class="error-text">{{ error }}</text>
+					</scroll-view>
+					<button class="retry" :disabled="loadingOrigin || suggesting" @click="retry">
+						重新获取建议
+					</button>
 				</view>
-			</view>
-			<view v-if="error" class="error-card">
-				<text class="error-text">{{ error }}</text>
-				<button class="retry" :disabled="loadingOrigin || suggesting" @click="retry">
-					重新获取建议
-				</button>
+				<view v-else-if="loadingOrigin || suggesting" class="place-note">
+					<view class="status-dot status-dot--loading" />
+					<text>
+						{{ loadingOrigin ? '正在确认你的起点...' : '正在寻找地球另一端的名字灵感...' }}
+					</text>
+				</view>
+				<view v-else-if="continentLabel" class="place-note">
+					<view class="status-dot" />
+					<view class="place-copy">
+						<text class="place-title">名字灵感来自{{ continentLabel }}</text>
+						<text v-if="locationLabel" class="place-detail">地球另一端 · {{ locationLabel }}</text>
+					</view>
+				</view>
 			</view>
 
 			<view class="footer">
@@ -319,7 +325,7 @@
 		padding: 0 10rpx;
 		background: transparent;
 		color: $am-text-muted;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		line-height: 50rpx;
 	}
 	.back::after,
@@ -329,19 +335,19 @@
 	}
 	.step {
 		display: block;
-		font-size: 22rpx;
+		font-size: $am-font-size-hint;
 		color: #78947b;
 		margin-bottom: 12rpx;
 	}
 	.title {
 		display: block;
-		font-size: 42rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		line-height: 1.4;
 	}
 	.subtitle {
 		display: block;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.7;
 		color: $am-text-muted;
 		margin-top: 16rpx;
@@ -367,12 +373,12 @@
 		border-radius: 50%;
 		background: #f8e7cf;
 		color: #9c7142;
-		font-size: 42rpx;
+		font-size: $am-font-size-display;
 		margin: 0 auto 30rpx;
 	}
 	.field-label {
 		display: block;
-		font-size: 27rpx;
+		font-size: $am-font-size-base;
 		font-weight: 600;
 		margin-bottom: 14rpx;
 	}
@@ -392,22 +398,22 @@
 		flex: 1;
 		min-width: 0;
 		height: 56rpx;
-		font-size: 32rpx;
+		font-size: $am-font-size-base;
 		color: $am-text;
 	}
 	.name-placeholder {
 		color: #b3a391;
-		font-size: 27rpx;
+		font-size: $am-font-size-base;
 	}
 	.name-count {
 		flex-shrink: 0;
-		font-size: 22rpx;
+		font-size: $am-font-size-hint;
 		color: $am-text-muted;
 	}
 	.field-hint,
 	.validation {
 		display: block;
-		font-size: 22rpx;
+		font-size: $am-font-size-hint;
 		line-height: 1.6;
 		margin-top: 12rpx;
 	}
@@ -415,6 +421,7 @@
 		color: $am-text-muted;
 	}
 	.validation {
+		font-size: $am-font-size-base;
 		color: #a65e46;
 	}
 	.new-name {
@@ -423,7 +430,7 @@
 		margin: 12rpx 0 0 auto;
 		background: transparent;
 		color: #9b7446;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		line-height: 50rpx;
 	}
 	.new-name[disabled] {
@@ -445,7 +452,7 @@
 		background: $am-bg-alt;
 		border: 2rpx solid $am-border;
 		border-radius: 16rpx;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		line-height: 74rpx;
 		color: $am-text-muted;
 	}
@@ -457,14 +464,25 @@
 		border-color: $am-secondary;
 		color: #587e60;
 	}
+	.suggestion-status {
+		height: 88px;
+		display: flex;
+		align-items: center;
+	}
 	.place-note {
+		width: 100%;
+		box-sizing: border-box;
 		display: flex;
 		align-items: flex-start;
-		gap: 14rpx;
-		padding: 24rpx 16rpx;
+		gap: 8px;
+		padding: 12px 8px;
 		color: $am-text-muted;
-		font-size: 24rpx;
-		line-height: 1.65;
+		font-size: $am-font-size-base;
+		line-height: 1.5;
+	}
+	.place-copy {
+		flex: 1;
+		min-width: 0;
 	}
 	.status-dot {
 		flex-shrink: 0;
@@ -472,7 +490,7 @@
 		height: 12rpx;
 		background: $am-secondary;
 		border-radius: 50%;
-		margin-top: 14rpx;
+		margin-top: 7px;
 	}
 	.status-dot--loading {
 		background: $am-primary;
@@ -482,29 +500,38 @@
 		display: block;
 	}
 	.place-detail {
-		font-size: 21rpx;
-		margin-top: 5rpx;
+		font-size: $am-font-size-hint;
+		margin-top: 4px;
 		opacity: 0.85;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.error-card {
-		padding: 22rpx 24rpx;
+		width: 100%;
+		height: 100%;
+		box-sizing: border-box;
+		padding: 8px 12px;
 		border-radius: 20rpx;
 		background: #faeee6;
 	}
+	.error-message {
+		height: 42px;
+	}
 	.error-text {
 		display: block;
-		font-size: 24rpx;
-		line-height: 1.7;
+		font-size: $am-font-size-base;
+		line-height: 1.5;
 		color: #a25f45;
 		overflow-wrap: anywhere;
 	}
 	.retry {
-		margin: 12rpx 0 0 auto;
+		margin: 4px 0 0 auto;
 		padding: 0 8rpx;
 		background: transparent;
 		color: #956545;
-		line-height: 48rpx;
-		font-size: 24rpx;
+		line-height: 24px;
+		font-size: $am-font-size-base;
 	}
 	.footer {
 		padding-top: 32rpx;
@@ -515,7 +542,7 @@
 		color: #fff;
 		border-radius: 48rpx;
 		line-height: 94rpx;
-		font-size: 29rpx;
+		font-size: $am-font-size-base;
 		box-shadow: 0 8rpx 20rpx rgba(230, 168, 92, 0.25);
 	}
 	.next::after {
@@ -528,7 +555,7 @@
 	}
 	.footer-note {
 		display: block;
-		font-size: 21rpx;
+		font-size: $am-font-size-hint;
 		text-align: center;
 		line-height: 1.7;
 		color: $am-text-muted;
@@ -539,17 +566,11 @@
 			padding-left: 24rpx;
 			padding-right: 24rpx;
 		}
-		.title {
-			font-size: 37rpx;
-		}
 		.identity-card {
 			padding: 24rpx;
 		}
 		.gender-options {
 			gap: 10rpx;
-		}
-		.gender-option {
-			font-size: 24rpx;
 		}
 		.name-field {
 			padding: 16rpx;

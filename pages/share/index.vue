@@ -125,6 +125,7 @@
 </script>
 <style lang="scss" scoped>
 	.page {
+		font-size: $am-font-size-base;
 		min-height: 100vh;
 		box-sizing: border-box;
 		padding: calc(var(--status-bar-height) + 110rpx) 28rpx calc(50rpx + env(safe-area-inset-bottom));
@@ -133,12 +134,12 @@
 	}
 	.title {
 		display: block;
-		font-size: 38rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 	}
 	.subtitle {
 		display: block;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 		line-height: 1.6;
 		margin: 14rpx 0 28rpx;
@@ -151,30 +152,30 @@
 		border: 2rpx solid $am-border;
 	}
 	.eyebrow {
-		font-size: 23rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 	}
 	.activity {
 		display: block;
-		font-size: 34rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		line-height: 1.5;
 		margin-top: 14rpx;
 	}
 	.description {
 		display: block;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.7;
 	}
 	.connection {
 		display: block;
 		color: #937153;
-		font-size: 27rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.7;
 		margin: 24rpx 0;
 	}
 	.btn {
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		border-radius: 48rpx;
 		margin: 20rpx 0;
 		line-height: 88rpx;
@@ -190,7 +191,7 @@
 	}
 	.refresh {
 		background: transparent;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 	}
 	.refresh::after {
@@ -208,7 +209,7 @@
 	}
 	.error {
 		display: block;
-		font-size: 23rpx;
+		font-size: $am-font-size-base;
 		color: #a05e4c;
 		text-align: center;
 	}

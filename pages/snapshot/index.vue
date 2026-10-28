@@ -69,6 +69,7 @@
 </script>
 <style lang="scss" scoped>
 	.page {
+		font-size: $am-font-size-base;
 		min-height: 100vh;
 		box-sizing: border-box;
 		padding: calc(var(--status-bar-height) + 110rpx) 28rpx calc(50rpx + env(safe-area-inset-bottom));
@@ -77,12 +78,12 @@
 	}
 	.title {
 		display: block;
-		font-size: 38rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 	}
 	.subtitle {
 		display: block;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 		margin: 14rpx 0 28rpx;
 		line-height: 1.6;
@@ -95,37 +96,37 @@
 		border: 2rpx solid $am-border;
 	}
 	.eyebrow {
-		font-size: 23rpx;
+		font-size: $am-font-size-base;
 		color: $am-text-muted;
 	}
 	.activity {
 		display: block;
-		font-size: 34rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		line-height: 1.5;
 		margin-top: 14rpx;
 	}
 	.description {
 		display: block;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.7;
 	}
 	.connection {
 		display: block;
-		font-size: 27rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.7;
 		color: #937153;
 		margin: 24rpx 0;
 	}
 	.story-title {
 		display: block;
-		font-size: 28rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		margin: 12rpx 0;
 	}
 	.frozen {
 		display: block;
-		font-size: 22rpx;
+		font-size: $am-font-size-hint;
 		line-height: 1.6;
 		color: $am-text-muted;
 		margin: 22rpx 8rpx;
@@ -134,7 +135,7 @@
 		background: $am-primary;
 		color: white;
 		border-radius: 48rpx;
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		line-height: 88rpx;
 		margin-top: 24rpx;
 	}

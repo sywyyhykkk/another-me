@@ -87,12 +87,12 @@
 	.world-heading {
 		display: flex;
 		justify-content: space-between;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		opacity: 0.85;
 	}
 	.world-place {
 		display: block;
-		font-size: 29rpx;
+		font-size: $am-font-size-base;
 		font-weight: 600;
 		line-height: 1.4;
 		margin-top: 14rpx;
@@ -101,30 +101,30 @@
 	}
 	.world-clock {
 		display: block;
-		font-size: 58rpx;
+		font-size: $am-font-size-display;
 		letter-spacing: 1rpx;
 		font-weight: 600;
 	}
 	.world-date {
 		display: block;
-		font-size: 22rpx;
+		font-size: $am-font-size-base;
 		margin-top: 6rpx;
 	}
 	.world-light {
 		display: block;
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		margin-top: 14rpx;
 	}
 	.world-zone {
 		display: block;
-		font-size: 19rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.4;
 		opacity: 0.75;
 		margin-top: 6rpx;
 		overflow-wrap: anywhere;
 	}
 </style>
-<style scoped>
+<style lang="scss" scoped>
 	.world-weather {
 		display: flex;
 		align-items: center;
@@ -137,31 +137,31 @@
 	}
 	.weather-temperature {
 		display: block;
-		font-size: 30rpx;
+		font-size: $am-font-size-base;
 		font-weight: 600;
 		line-height: 1.3;
 		white-space: nowrap;
 	}
 	.weather-description {
 		display: block;
-		font-size: 22rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.5;
 		overflow-wrap: anywhere;
 	}
 	.weather-period {
 		display: block;
-		font-size: 18rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.5;
 		opacity: 0.7;
 	}
 	.weather-unavailable {
 		display: block;
-		font-size: 22rpx;
+		font-size: $am-font-size-base;
 		opacity: 0.65;
 		margin-top: 18rpx;
 	}
 	.weather-source {
-		font-size: 20rpx;
+		font-size: $am-font-size-hint;
 		color: #92745a;
 		text-align: right;
 		line-height: 1.5;
@@ -170,12 +170,6 @@
 	@media (max-width: 340px) {
 		.world-weather {
 			gap: 0;
-		}
-		.weather-temperature {
-			font-size: 25rpx;
-		}
-		.weather-description {
-			font-size: 20rpx;
 		}
 	}
 </style>

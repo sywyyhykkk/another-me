@@ -44,9 +44,10 @@
 	import type { Scene } from '../types/virtualProfile'
 	defineProps<{ scene: Scene; state: string; emoji?: string }>()
 </script>
-<style scoped>
+<style lang="scss" scoped>
 	.scene {
 		height: 285rpx;
+		min-height: 160px;
 		border-radius: 26rpx;
 		position: relative;
 		overflow: hidden;
@@ -96,7 +97,7 @@
 		top: 38rpx;
 		border-bottom: 8rpx solid #a8886e;
 		color: #907858;
-		font-size: 26rpx;
+		font-size: $am-font-size-base;
 	}
 	.desk {
 		position: absolute;
@@ -127,8 +128,17 @@
 		display: flex;
 		justify-content: space-between;
 		color: #684f38;
-		font-size: 21rpx;
+		font-size: $am-font-size-base;
+		line-height: 1.5;
 		gap: 12rpx;
+	}
+	.scene-caption text:first-child {
+		flex-shrink: 0;
+	}
+	.scene-caption text:last-child {
+		flex: 1;
+		min-width: 0;
+		text-align: right;
 	}
 	.scene--night .scene-caption {
 		color: #fff2dc;

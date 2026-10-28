@@ -3,9 +3,6 @@ uni_modules/
 unpackage/
 dist/
 static/
-assets/
-previews/
-scripts/
 package-lock.json
 project.private.config.json
 .hbuilderx/

@@ -91,7 +91,7 @@
 
 	.title {
 		display: block;
-		font-size: 40rpx;
+		font-size: $am-font-size-title;
 		font-weight: 600;
 		color: $am-text;
 		margin-bottom: 12rpx;
@@ -99,7 +99,7 @@
 
 	.desc {
 		display: block;
-		font-size: 28rpx;
+		font-size: $am-font-size-base;
 		line-height: 1.6;
 		color: $am-text-muted;
 	}
@@ -131,12 +131,12 @@
 	}
 
 	.city-name {
-		font-size: 30rpx;
+		font-size: $am-font-size-base;
 		color: $am-text;
 	}
 
 	.city-check {
-		font-size: 24rpx;
+		font-size: $am-font-size-base;
 		color: $am-primary;
 	}
 
@@ -149,7 +149,7 @@
 		height: 96rpx;
 		line-height: 96rpx;
 		border-radius: 48rpx;
-		font-size: 30rpx;
+		font-size: $am-font-size-base;
 		border: none;
 		margin: 0;
 	}
