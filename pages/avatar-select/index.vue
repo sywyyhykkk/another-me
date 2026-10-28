@@ -27,6 +27,9 @@
 		</view>
 
 		<view class="footer">
+			<button class="location-button" :disabled="isSubmitting" @click="goSelectLocation">
+				重新选择位置
+			</button>
 			<button
 				class="btn"
 				:class="selectedAvatarId ? 'btn-primary' : 'btn-disabled'"
@@ -84,6 +87,18 @@
 		uni.navigateBack({ fail: () => uni.redirectTo({ url: '/pages/character-setup/index' }) })
 	}
 
+	function goSelectLocation() {
+		if (isSubmitting.value) return
+		const pages = getCurrentPages()
+		const locationIndex = pages.findIndex((page) => page.route === 'pages/location-select/index')
+		const openLocation = () => uni.reLaunch({ url: '/pages/location-select/index' })
+		if (locationIndex >= 0) {
+			uni.navigateBack({ delta: pages.length - 1 - locationIndex, fail: openLocation })
+		} else {
+			openLocation()
+		}
+	}
+
 	function selectAvatar(avatar: Avatar) {
 		selectedAvatarId.value = avatar.id
 		uni.setStorageSync(
@@ -122,7 +137,7 @@
 <style lang="scss" scoped>
 	.page {
 		min-height: 100vh;
-		padding: calc(var(--status-bar-height) + 98rpx) 32rpx calc(210rpx + env(safe-area-inset-bottom));
+		padding: calc(var(--status-bar-height) + 98rpx) 32rpx calc(290rpx + env(safe-area-inset-bottom));
 		background: $am-bg;
 		box-sizing: border-box;
 	}
@@ -227,6 +242,20 @@
 		bottom: 0;
 		padding: 24rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
 		background: linear-gradient(180deg, rgba(255, 247, 234, 0) 0%, $am-bg 30%);
+	}
+
+	.location-button {
+		width: fit-content;
+		margin: 0 auto 16rpx;
+		padding: 0 24rpx;
+		background: transparent;
+		color: $am-text-muted;
+		font-size: 14px;
+		line-height: 64rpx;
+	}
+
+	.location-button::after {
+		border: 0;
 	}
 
 	.btn {
